@@ -1,0 +1,141 @@
+{
+	"cafe": [
+		{
+			"name":"알림정보",
+			"method": "GET",
+			"url":"https://apis.daum.net/cafe/v1/alimis.[json|xml]"
+		},
+		{
+			"name":"게시글 리스트 보기",
+			"method": "GET",
+			"url":"https://apis.daum.net/cafe/v1/articles/{cafeCode}/{boardId}.[json|xml]"
+		},
+		{
+			"name":"게시판 리스트 보기",
+			"method": "GET",
+			"url":"https://apis.daum.net/cafe/v1/boards/{cafeCode}.[json|xml]"
+		},
+		{
+			"name":"자주가는 카페 목록 보기",
+			"method": "GET",
+			"url":"https://apis.daum.net/cafe/v1/favorite_cafes.[json|xml]"
+		},
+		{
+			"name":"최신글 보기",
+			"method": "GET",
+			"url":"https://apis.daum.net/cafe/v1/recent_articles/{cafeCode}.[json|xml]"
+		},
+		{
+			"name":"게시글 쓰기 - 한줄 메모장",
+			"method": "GET,POST",
+			"url":"https://apis.daum.net/cafe/v1/write_article/{cafeCode}/_memo.[json|xml]"
+		}
+	],
+	"blog": [
+		{
+			"name":"글 목록",
+			"method": "GET,POST",
+			"url":"https://apis.daum.net/blog/v1/{blogName}/list.[json|xml]"
+		},
+		{
+			"name":"새 글 쓰기(Only Article)",
+			"method": "GET,POST",
+			"url":"https://apis.daum.net/blog/v1/{blogName}/write.[json|xml]"
+		},
+		{
+			"name":"글 수정하기",
+			"method": "GET,POST",
+			"url":"https://apis.daum.net/blog/v1/{blogName}/modify.[json|xml]"
+		},
+		{
+			"name":"글 내용 가져오기(글 한개)",
+			"method": "GET,POST",
+			"url":"https://apis.daum.net/blog/v1/{blogName}/read.[json|xml]"
+		},
+		{
+			"name":"파일 업로드",
+			"method": "POST",
+			"url":"https://apis.daum.net/blog/v1/{blogName}/upload-file.[json|xml]"
+		},
+		{
+			"name":"카테고리 목록 가져오기",
+			"method": "GET,POST",
+			"url":"https://apis.daum.net/blog/v1/{blogName}/categories.[json|xml]"
+		},
+		{
+			"name":"댓글 목록 가져오기",
+			"method": "GET,POST",
+			"url":"https://apis.daum.net/blog/v1/{blogName}/list.[json|xml]"
+		},
+		{
+			"name":"댓글 작성하기",
+			"method": "GET,POST",
+			"url":"https://apis.daum.net/blog/v1/{blogName}/write.[json|xml]"
+		},
+		{
+			"name":"블로그 정보 가져오기",
+			"method": "GET,POST",
+			"url":"https://apis.daum.net/blog/v1/{blogName}/info.[json|xml]"
+		},
+		{
+			"name":"나에 대한 반응 목록",
+			"method": "GET,POST",
+			"url":"https://apis.daum.net/blog/v1/{blogName}/activities.[json|xml]"
+		}
+	],
+	"calendar": [
+		{
+			"name":"카테고리 생성하기",
+			"method": "GET,POST",
+			"url":"https://apis.daum.net/calendar/v1/category/create.[json|xml]"
+		},
+		{
+			"name":"카테고리 조회하기-전체",
+			"method": "GET,POST",
+			"url":"https://apis.daum.net/calendar/v1/categories.[json|xml]"
+		},
+		{
+			"name":"카테고리 조회하기-개별",
+			"method": "GET,POST",
+			"url":"https://apis.daum.net/calendar/v1/category/{category_id}.[json|xml]"
+		},
+		{
+			"name":"카테고리 수정하기",
+			"method": "GET,POST",
+			"url":"https://apis.daum.net/calendar/v1/category/{category_id}/update.[json|xml]"
+		},
+		{
+			"name":"일정 생성하기",
+			"method": "GET,POST",
+			"url":"https://apis.daum.net/calendar/v1/{category_id}/event/create.[json|xml]"
+		},
+		{
+			"name":"일정 조회하기-전체",
+			"method": "GET,POST",
+			"url":"https://apis.daum.net/calendar/v1/{category_id}/events.[json|xml]"
+		},
+		{
+			"name":"일정 조회하기-개별",
+			"method": "GET,POST",
+			"url":"https://apis.daum.net/calendar/v1/{category_id}/events/{event_id}.[json|xml]"
+		},
+		{
+			"name":"일정 수정하기",
+			"method": "GET,POST",
+			"url":"https://apis.daum.net/calendar/v1/{category_id}/events/{event_id}/update.[json|xml]"
+		},
+		{
+			"name":"일정 삭제하기",
+			"method": "GET,POST",
+			"url":"https://apis.daum.net/calendar/v1/{category_id}/events/{event_id}/delete.[json|xml]"
+		}
+
+	],
+	"profile": [
+		{
+			"name":"Daum 사용자의 프로필 정보 보기",
+			"method": "GET,POST",
+			"url":"https://apis.daum.net/user/v1/show.[json|xml]"
+		}
+	]
+}

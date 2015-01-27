@@ -1,0 +1,331 @@
+@charset "utf-8";
+
+/* Common */
+body {font-size:18px;font-family:KoPubDotum,'Malgun Gothic','맑은 고딕',sans-serif}
+
+.nodrag{-webkit-touch-callout: none;
+-webkit-user-select: none; /* Webkit */
+-moz-user-select: none;    /* Firefox */
+-ms-user-select: none;     /* IE 10  */
+
+/* Currently not supported in Opera but will be soon */
+-o-user-select: none;
+user-select: none;  }
+
+.srcollauto {overflow-y:auto;overflow-x:visible}
+
+.screen_out {overflow:hidden;position:absolute;width:0;height:0;line`-height:0;text-indent:-9999px}
+.img_init {display:block}
+.mypeopleStickerImg {width: 215px;}
+/* Fonts */
+@font-face {
+	font-family:KoPubDotum;
+	src:url(../fonts/KoPubDotumPLA.woff);/* OTF 변환 */
+}
+@font-face {
+	font-family:DaumR;
+	src:url(../fonts/DaumR.woff);
+}
+
+.ff_kopub {font-family:KoPubDotum,'Malgun Gothic','맑은 고딕',sans-serif}
+.ff_daumr {font-family:DaumR,'Malgun Gothic','맑은 고딕',sans-serif}
+
+/* Layout */
+#daumContent {overflow:hidden}
+
+.is-disabled {
+    opacity: .7;
+    pointer-events: none;
+}
+
+
+
+
+/* Common Component */
+
+
+
+
+
+
+
+
+/* Developers */
+
+
+
+
+
+
+
+
+
+/* Console */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* playground 시작 */
+/* playground */
+.cont_playground {background-color:#f0f1f3}
+.wrap_tools {position:relative;padding:15px 50px}
+.wrap_tools .ico_tools {background:url(../images/ico_tools.png) no-repeat 0 0;-webkit-background-size:18px 50px;background-size:18px 50px}
+.wrap_tools .cont_tool,
+.wrap_tools .cont_help {float:left;width:100%}
+.wrap_tools .inner_cont {position:relative;height:500px;border-radius:3px;background-color:#fbfbfb;-webkit-box-shadow:2px 2px 10px rgba(0,0,0,0.1);box-shadow:2px 2px 10px rgba(0,0,0,0.1)}
+
+.wrap_tools .cont_tool .inner_cont {margin-right:12px; height:830px}
+.wrap_tools .cont_tool .item_tool {position:relative;padding:10px 0 0 170px;clear:both}
+.wrap_tools .item_tool .tool_tit {position:absolute;top:13px;left:0}
+.wrap_tools .item_tool .user_tool {padding-right:50px}
+
+.wrap_tools .item_tool .btn {width:95%;border-radius:0;margin-left:3%}
+.wrap_tools .item_tool .form-control {border-radius:0;text-align:center;width:95%;margin-left:3%}
+.wrap_tools .item_tool .user_tool .btn_refresh {position:absolute;top:10px;right:0;width:auto}
+
+.wrap_tools .item_openapi {margin-bottom:40px}
+.wrap_tools .item_openapi .user_tool {padding-right:85px}
+.wrap_tools .item_openapi .btn_run {position:absolute;top:10px;right:0;width:auto}
+
+.wrap_tools .on .tit_tool,
+.wrap_tools .on .form-control,
+.wrap_tools .on .btn {color:#299b94}
+
+.wrap_tools .btn_help {position:absolute;top:246px;right:15px;width:20px;height:20px;padding:0;border-radius:0}
+
+.wrap_tools .wrap_view {position:relative;height:440px}
+.wrap_tools .box_view {overflow:hidden;width:100%;height:100%;margin-bottom:10px;border:1px solid #d4d4d4;background-color:#eeeded}
+.wrap_tools .wrap_view .btn_close {position:absolute;right:10px;bottom:10px}
+.wrap_tools .box_divide .box_view {height:50%;padding-bottom:0}
+.wrap_tools .box_divide .btn_close {bottom:0}
+
+.wrap_tools .bar_divide {position:absolute;top:0;right:-19px;width:14px;height:100%;border-radius:3px;background:#f4f3f3 url(../images/ico_divide.png) no-repeat 50% 50%;cursor:pointer;-webkit-box-shadow:inset 3px 4px 0 #f7f6f6, 2px 2px 10px rgba(0,0,0,0.1);box-shadow:inset 3px 4px 0 #f7f6f6, 2px 2px 10px rgba(0,0,0,0.1);-webkit-background-size:9px 11px;background-size:9px 11px}
+.wrap_tools .btn_divide {z-index:2;position:absolute;top:0;right:-19px;width:14px;height:50px;padding:0;border:0 none;border-top-left-radius:3px;border-top-right-radius:3px;background-color:#aaa;text-align:center;line-height:50px}
+
+.wrap_tools .cont_help .inner_cont {overflow-x:hidden;overflow-y:auto;margin-left:12px}
+.wrap_tools .cont_help .talk_tool {padding-top:20px;padding-bottom:20px}/*하단에 여백 추가*/
+.wrap_tools .cont_help .wrap_img {float:left;margin-right:10px}
+.wrap_tools .cont_help .wrap_talk {float:left}
+.wrap_tools .cont_help .tit_talk {float:left}
+.wrap_tools .cont_help .bubble_tool {float:left;position:relative;margin-left:12px;padding:5px;border-radius:5px;background-color:#fff;clear:both;-webkit-box-shadow:2px 2px 10px rgba(0,0,0,0.3);box-shadow:2px 2px 10px rgba(0,0,0,0.3)}
+.wrap_tools .cont_help .bubble_tool .ico_bubble {position:absolute;top:10px;left:-12px;width:12px;height:13px;background-position:0 -13px}
+.wrap_tools .cont_help .talk_boss .wrap_talk {color:#299b94}
+.wrap_tools .cont_help .talk_me .wrap_talk {float:right}
+.wrap_tools .cont_help .talk_me .bubble_tool {float:right;margin-left:0;margin-right:25px;background-color:#b3dfdc}
+.wrap_tools .cont_help .talk_me .bubble_tool .ico_bubble {left:auto;right:-18px;width:18px;height:13px;background-position:0 -33px}
+
+.wrap_tools .kanav-bar {padding: 0px 0px 0px 12px;  border-radius: 3px;    background-position: inherit;  position: relative;}
+.wrap_tools .kanav-bar .text{   background-color: rgb(110, 153, 219); color: white; padding-left: 20px;padding-top: 10px;height: 40px;}
+.wrap_tools .KakaoBtn {height:100%; float:right; border:0; background-color: rgb(110, 153, 219); color: white; outline:none;}
+.wrap_tools .kakaoMenu{display:none;z-index:1; position:absolute; width:100px; height:50px; background:#ffffff; right:10px;}
+.wrap_tools .kakaoStyleMenu{background-color: rgb(110, 153, 219);; width:100%; height:5px;}
+
+.wrap_tools .delete{border:0;margin-top:10px; width:100px; text-align:left; outline:none}
+.wrap_tools .help {border:0;margin-top:10px; width:100px; text-align:left; outline:none}
+.wrap_tools .restart{border:0;margin-top:10px; width:100px; text-align:left; outline:none}
+
+.wrap_tools .sub{background-color: rgb(127, 178, 233);}
+.wrap_tools .manner_bar{margin-top: 3px;width: 100%;height: 10%;}
+.wrap_tools .kakaoInput{height: 36px;width: 100%;border:#ffffff;border-radius: 3px;outline:none;resize:none;}
+.wrap_tools .submitKakao{height: 60px; width: 8.2%; margin-left: 3px; background-color: rgb(250, 250, 0); position:relative;float:right;}
+.wrap_tools .box_Iframe {overflow:hidden;width:100%;height:100%;margin-bottom:10px;border:1px solid #d4d4d4;background-color:#eeeded}
+.wrap_tools .outter_Iframe {overflow:hidden;width:100%;height:60%;margin-bottom:10px;border:1px solid #d4d4d4;background-color:#eeeded;-webkit-box-shadow:2px 2px 10px rgba(0,0,0,0.1);box-shadow:2px 2px 10px rgba(0,0,0,0.1);padding:10px;padding-bottom:35px;}
+/* playground 끝 */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* 모달 테스트 */
+/* Modal */
+.modal_g {
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	width: 50%;
+	max-width: 630px;
+	min-width: 320px;
+	height: auto;
+	z-index: 2000;
+	visibility: hidden;
+	-webkit-backface-visibility: hidden;
+	-moz-backface-visibility: hidden;
+	backface-visibility: hidden;
+	-webkit-transform: translateX(-50%) translateY(-50%);
+	-moz-transform: translateX(-50%) translateY(-50%);
+	-ms-transform: translateX(-50%) translateY(-50%);
+	transform: translateX(-50%) translateY(-50%);
+}
+
+.modal_on {
+	visibility: visible;
+}
+
+.modal_overlay {
+	position: fixed;
+	width: 100%;
+	height: 100%;
+	visibility: hidden;
+	top: 0;
+	left: 0;
+	z-index: 1000;
+	opacity: 0;
+	background: rgba(143,27,15,0.8);
+	-webkit-transition: all 0.3s;
+	-moz-transition: all 0.3s;
+	transition: all 0.3s;
+}
+
+.modal_on ~ .modal_overlay {
+	opacity: 1;
+	visibility: visible;
+}
+
+/* Content styles */
+.cont_modal {
+	color: #fff;
+	background: #e74c3c;
+	position: relative;
+	border-radius: 3px;
+	margin: 0 auto;
+}
+
+.cont_modal h3 {
+	margin: 0;
+	padding: 0.4em;
+	text-align: center;
+	font-size: 2.4em;
+	font-weight: 300;
+	opacity: 0.8;
+	background: rgba(0,0,0,0.1);
+	border-radius: 3px 3px 0 0;
+}
+
+.cont_modal > div {
+	padding: 15px 40px 30px;
+	margin: 0;
+	font-weight: 300;
+	font-size: 1.15em;
+}
+
+.cont_modal > div p {
+	margin: 0;
+	padding: 10px 0;
+}
+
+.cont_modal > div ul {
+	margin: 0;
+	padding: 0 0 30px 20px;
+}
+
+.cont_modal > div ul li {
+	padding: 5px 0;
+}
+
+.cont_modal button {
+	display: block;
+	margin: 0 auto;
+	font-size: 0.8em;
+}
+
+/* Individual modal styles with animations/transitions */
+
+/* Effect 1: Fade in and scale up */
+.modal_g .cont_modal {
+	-webkit-transform: scale(0.7);
+	-moz-transform: scale(0.7);
+	-ms-transform: scale(0.7);
+	transform: scale(0.7);
+	opacity: 0;
+	-webkit-transition: all 0.3s;
+	-moz-transition: all 0.3s;
+	transition: all 0.3s;
+}
+
+.modal_on.modal_g .cont_modal {
+	-webkit-transform: scale(1);
+	-moz-transform: scale(1);
+	-ms-transform: scale(1);
+	transform: scale(1);
+	opacity: 1;
+}
+
+
+.map_wrap {overflow:hidden;height:330px}
+    /* 지도위에 로드뷰의 위치와 각도를 표시하기 위한 map walker 아이콘의 스타일 */
+.MapWalker {position:absolute;margin:-26px 0 0 -51px}
+.MapWalker .figure {position:absolute;width:25px;left:38px;top:-2px;
+    height:39px;background:url(http://i1.daumcdn.net/localimg/localimages/07/2012/roadview/roadview_minimap_wk.png) -298px -114px no-repeat}
+
+.MapWalker .angleBack {width:102px;height:52px;background: url(http://i1.daumcdn.net/localimg/localimages/07/2012/roadview/roadview_minimap_wk.png) -834px -2px no-repeat;}
+.MapWalker.m0 .figure {background-position: -298px -114px;}
+.MapWalker.m1 .figure {background-position: -335px -114px;}
+.MapWalker.m2 .figure {background-position: -372px -114px;}
+.MapWalker.m3 .figure {background-position: -409px -114px;}
+.MapWalker.m4 .figure {background-position: -446px -114px;}
+.MapWalker.m5 .figure {background-position: -483px -114px;}
+.MapWalker.m6 .figure {background-position: -520px -114px;}
+.MapWalker.m7 .figure {background-position: -557px -114px;}
+.MapWalker.m8 .figure {background-position: -2px -114px;}
+.MapWalker.m9 .figure {background-position: -39px -114px;}
+.MapWalker.m10 .figure {background-position: -76px -114px;}
+.MapWalker.m11 .figure {background-position: -113px -114px;}
+.MapWalker.m12 .figure {background-position: -150px -114px;}
+.MapWalker.m13 .figure {background-position: -187px -114px;}
+.MapWalker.m14 .figure {background-position: -224px -114px;}
+.MapWalker.m15 .figure {background-position: -261px -114px;}
+.MapWalker.m0 .angleBack {background-position: -834px -2px;}
+.MapWalker.m1 .angleBack {background-position: -938px -2px;}
+.MapWalker.m2 .angleBack {background-position: -1042px -2px;}
+.MapWalker.m3 .angleBack {background-position: -1146px -2px;}
+.MapWalker.m4 .angleBack {background-position: -1250px -2px;}
+.MapWalker.m5 .angleBack {background-position: -1354px -2px;}
+.MapWalker.m6 .angleBack {background-position: -1458px -2px;}
+.MapWalker.m7 .angleBack {background-position: -1562px -2px;}
+.MapWalker.m8 .angleBack {background-position: -2px -2px;}
+.MapWalker.m9 .angleBack {background-position: -106px -2px;}
+.MapWalker.m10 .angleBack {background-position: -210px -2px;}
+.MapWalker.m11 .angleBack {background-position: -314px -2px;}
+.MapWalker.m12 .angleBack {background-position: -418px -2px;}
+.MapWalker.m13 .angleBack {background-position: -522px -2px;}
+.MapWalker.m14 .angleBack {background-position: -626px -2px;}
+.MapWalker.m15 .angleBack {background-position: -730px -2px;}
+
+
+
+
