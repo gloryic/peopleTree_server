@@ -40,7 +40,7 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View v) {
             	
-        		String url = "http://210.118.74.107:3000/ptree/test";
+        		String url = C.baseURL+"/ptree/test";
         		
         		JsonObjectRequest jsonObjReq = new JsonObjectRequest(Method.GET, url,
         				null, new Response.Listener<JSONObject>() {
@@ -61,7 +61,7 @@ public class MainActivity extends Activity {
         						// hide the progress dialog
         						//pDialog.hide();
         					}
-        				});
+        		});
         		VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(jsonObjReq);
             }
         });
