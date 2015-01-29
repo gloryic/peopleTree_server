@@ -35,6 +35,7 @@ public class VolleySingleton {
         */
     }
  
+    private Context context;
  
     public static VolleySingleton getInstance(Context context) {
         if (instance == null) {

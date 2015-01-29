@@ -18,53 +18,67 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.VolleyLog;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.ssm.location.PeopleTreeLocationManager;
+import com.ssm.peopleTree.network.NetworkManager;
 import com.ssm.volley.VolleySingleton;
+
 public class MainActivity extends Activity {
-	
+
 	private TextView mTvResult;
 	private TextView responseText;
+
+
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		
-   		//final ProgressDialog pDialog = new ProgressDialog(this);
-		//pDialog.setMessage("Loading...");
-		//pDialog.show();
+		NetworkManager.getInstance().initialize(getApplicationContext());
+		// final ProgressDialog pDialog = new ProgressDialog(this);
+		// pDialog.setMessage("Loading...");
+		// pDialog.show();
+
+		
+		PeopleTreeLocationManager.txt1 = (TextView) findViewById(R.id.locationTextview1);
+		Log.i("Log", "start");
+		
 		
 		Button btnSimpleRequest = (Button) findViewById(R.id.btn_simple_request);
 		responseText = (TextView) findViewById(R.id.test);
-		
-        btnSimpleRequest.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-            	
-        		String url = C.baseURL+"/ptree/test";
-        		
-        		JsonObjectRequest jsonObjReq = new JsonObjectRequest(Method.GET, url,
-        				null, new Response.Listener<JSONObject>() {
 
-        					@Override
-        					public void onResponse(JSONObject response) {
-        						Log.d("App", response.toString());
-        						responseText.setText("Response:" + " "+ response.toString());
-        						Log.i("App",response.toString());
-        						//pDialog.hide();
-        					}
-        				}, new Response.ErrorListener() {
+		btnSimpleRequest.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
 
-        					@Override
-        					public void onErrorResponse(VolleyError error) {
-        						VolleyLog.d("App_Error", "Error: " + error.getMessage());
-        						Log.i("App_Error",error.getMessage());
-        						// hide the progress dialog
-        						//pDialog.hide();
-        					}
-        		});
-        		VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(jsonObjReq);
-            }
-        });
+				String url = C.baseURL + "/ptree/test";
+
+				JsonObjectRequest jsonObjReq = new JsonObjectRequest(
+						Method.GET, url, null,
+						new Response.Listener<JSONObject>() {
+
+							@Override
+							public void onResponse(JSONObject response) {
+								Log.d("App", response.toString());
+								responseText.setText("Response:" + " "
+										+ response.toString());
+								Log.i("App", response.toString());
+								// pDialog.hide();
+							}
+						}, new Response.ErrorListener() {
+
+							@Override
+							public void onErrorResponse(VolleyError error) {
+								VolleyLog.d("App_Error",
+										"Error: " + error.getMessage());
+								Log.i("App_Error", error.getMessage());
+								// hide the progress dialog
+								// pDialog.hide();
+							}
+						});
+				VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(jsonObjReq);
+			}
+		});
 	}
 
 	@Override

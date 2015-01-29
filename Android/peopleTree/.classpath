@@ -5,6 +5,6 @@
 	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.DEPENDENCIES"/>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="gen"/>
-	<classpathentry kind="lib" path="D:/git/peopleTree/peopleTree/Android/peopleTree/libs/volley.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Lee/git/peopleTree/Android/peopleTree/libs/volley.jar"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>
