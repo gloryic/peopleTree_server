@@ -6,9 +6,18 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var http = require('http');
 var mysql = require('mysql');
+var redis = require('redis');
+
+var PeopleTree = require('./routes/location/peopleTree');
 
 var index = require('./routes/index');
-var ptree = require('./routes/ptree');
+var ptree = require('./routes/ptree'); // REF
+
+var makeEdge = require('./routes/group/makeEdge');
+var makeGroup = require('./routes/group/makeGroup');
+var getinfo = require('./routes/getinfo/getinfo');
+var _Location = require('./routes/location/location');
+var treeTest = require('./routes/location/peopleTreeTest');
 
 var app = express();
 // view engine setup
@@ -26,6 +35,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/main', index);
 app.use('/ptree', ptree);
+
+app.use('/ptree/make/edge', makeEdge);
+app.use('/ptree/make/group', makeGroup);
+app.use('/ptree/getinfo', getinfo);
+app.use('/ptree/check', _Location);
+app.use('/ptree/test', treeTest);
 
 /// catch 404 and forwarding to error handler
 app.use(function(req, res, next) {
@@ -66,6 +81,18 @@ app.use(function(err, req, res, next) {
         error: {}
     });
 });
+
+// 클라이언트 객체 생성
+global.tree = redis.createClient();
+
+tree.on('error', function (err) {
+   console.log('redis_Error ' + err);
+});
+
+global.peopleTree = new PeopleTree(tree);
+
+// 클라이언트 빠져나오기
+//client.quit();
 
 module.exports = app;
 
