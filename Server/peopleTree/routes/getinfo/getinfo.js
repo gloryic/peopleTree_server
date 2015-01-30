@@ -10,9 +10,10 @@ var router = express.Router();
 router.get('/group/member',function(req,res){
 
 	var data, data2, longitude, latitude;
+	var queryString="";
+	
 	var userId = req.query.userId;
     var userPhoneNumber = req.query.userPhoneNumber;
-	var queryString="";
 
 	if(userId == undefined && userPhoneNumber == undefined){
 		res.json({"status":300});

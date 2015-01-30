@@ -12,6 +12,7 @@ var PeopleTree = require('./routes/location/peopleTree');
 
 var index = require('./routes/index');
 var ptree = require('./routes/ptree'); // REF
+var ptreeLogin = require('./routes/peopleTreeLogin');
 
 var makeEdge = require('./routes/group/makeEdge');
 var makeGroup = require('./routes/group/makeGroup');
@@ -35,6 +36,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/main', index);
 app.use('/ptree', ptree);
+app.use('/ptree/login', ptreeLogin);
 
 app.use('/ptree/make/edge', makeEdge);
 app.use('/ptree/make/group', makeGroup);

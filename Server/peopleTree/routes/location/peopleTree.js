@@ -19,8 +19,6 @@ PeopleTree.prototype.insertNode = function(userId, f) {
       items.managingNumber = 0;
       tree.hmset(items.groupId+"/"+items.groupMemberId, items);
 
-
-
       return f(items);
     }
     else
