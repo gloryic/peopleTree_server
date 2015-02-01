@@ -11,7 +11,7 @@ router.get('/', function(req, res) {
     var password = req.query.password;
 
 	if( password == undefined || (userId == undefined && userPhoneNumber == undefined)){
-		res.json({"status":300});
+		res.json({"status":300, errorDesc : "parameter Error"});
 	}
 	else if(userPhoneNumber == undefined){
 		userPhoneNumber = 0;
@@ -20,16 +20,17 @@ router.get('/', function(req, res) {
 		userId = 0;
 	}
 
-    var loginData = [userPhoneNumber,userId,password];
+    var loginData = [userId,userPhoneNumber,password];
     console.log("loginData : " + loginData);
     async.waterfall([
 
 		  function(callback) {
 		    console.log('--- async.waterfall #1 ---');
 		    var query = dbcon.query('SELECT 1 FROM idinfo WHERE	(userId=? OR userPhoneNumber=?) AND password=?',loginData,function(err,rows){
+
 	        	console.log("rows.length : "+rows.length);
 		    	if (rows.length == 0){
-		    		res.json({"status":"SELECT FROM idinfo - Login FAIL"});
+		    		res.json({status:300, errorDesc : "SELECT FROM idinfo - Login FAIL"});
 		    	}
 		    	else{
 		    		console.log("SELECT FROM idinfo : "+ rows[0]);

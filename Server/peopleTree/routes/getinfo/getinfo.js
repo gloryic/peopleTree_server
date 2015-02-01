@@ -55,13 +55,18 @@ router.get('/group/member',function(req,res){
 
 									console.log("redis_obj : "+obj);
 
+									//로그인 상태라면 메모리에서 값을 읽어온다.
 									if(obj!=null){
 										latitude = obj.latitude;
 					    	    		longitude = obj.longitude;
+					    	    		managingTotalNumber = obj.managingTotalNumber;
+					    	    		managingNumber = obj.managingNumber;
 									}
 									else{
 										latitude = null;
 					    	    		longitude = null;
+					    	    		managingNumber = 0;
+					    	    		managingTotalNumber = 0;
 										console.log("redis_err : "+ err);
 									}
 
@@ -77,7 +82,9 @@ router.get('/group/member',function(req,res){
 												                                "userPhoneNumber":data.userPhoneNumber,
 												                                "edgeStatus":data2.edgeStatus, 
 												                                "longitude" : longitude,
-												                                "latitude" : latitude
+												                                "latitude" : latitude,
+												                                "managingTotalNumber" : managingTotalNumber,
+												                                "managingNumber" : managingNumber
 												                            }
 									});
 								});

@@ -23,6 +23,8 @@ var treeTest = require('./routes/location/peopleTreeTest');
 var app = express();
 // view engine setup
 
+app.disable('etag');//not 304
+
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 app.set('port', process.env.PORT || 3000);

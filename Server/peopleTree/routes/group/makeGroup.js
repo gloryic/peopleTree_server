@@ -32,7 +32,7 @@ router.get('/',function(req,res){
 		    var query = dbcon.query('INSERT INTO idinfo(userPhoneNumber,userId,password,userName) VALUES(?,?,?,?)',idInfoData,function(err,rows){
 	        	
 		    	if (typeof rows === 'undefined'){
-		    		res.json({"status":"INSERT INTO idinfo - FAIL"});
+		    		res.json({status :300, errorDesc : "INSERT INTO idinfo - FAIL"});
 		    	}
 		    	else{
 		    		console.log("INSERT INTO idinfo : "+rows.affectedRows);
@@ -46,7 +46,7 @@ router.get('/',function(req,res){
 		    var query = dbcon.query('SELECT userNumber FROM idinfo WHERE userId=?',userId,function(err,rows){
 
 	        	if (rows.length == 0){
-		    		res.json({"status":"SELECT userNumber - FAIL"});
+		    		res.json({status: 300, errorDesc : "SELECT userNumber - FAIL"});
 		    	}
 		    	else{
 		        	console.log("SELECT userNumber : "+rows[0].userNumber);
@@ -65,13 +65,12 @@ router.get('/',function(req,res){
 	        var query = dbcon.query('INSERT INTO grouplist(groupRoot,groupName) VALUES(?,?)',groupData,function(err,rows){
 		        
 		        if (typeof rows === 'undefined'){
-		    		res.json({"status":"INSERT INTO grouplist - FAIL"});
+		    		res.json({status: 300, errorDesc : "INSERT INTO grouplist - FAIL"});
 		    	}
 		    	else{
 			        console.log("INSERT INTO grouplist : "+rows.affectedRows);
 			        callback(null, userNumber);
 		    	}
-
 		  	});
 		  },
 
@@ -80,7 +79,7 @@ router.get('/',function(req,res){
 		    var query = dbcon.query('SELECT groupId FROM grouplist WHERE groupRoot=?',userNumber,function(err,rows){
 
 	        	if (rows.length == 0){
-		    		res.json({"status":"SELECT groupId - FAIL"});
+		    		res.json({status:300, errorDesc : "SELECT groupId - FAIL"});
 		    	}
 		    	else{
 		        	console.log("SELECT groupId : "+rows[0].groupId);
@@ -100,7 +99,7 @@ router.get('/',function(req,res){
 	        var query = dbcon.query('INSERT INTO groupmember(groupMemberId,groupId,userNumber,parentGroupMemberId,userId) VALUES(?,?,?,?,?)',groupMemberData,function(err,rows){
 
 		        if (typeof rows === 'undefined'){
-		    		res.json({"status":"INSERT INTO groupmember - FAIL"});
+		    		res.json({status:300, errorDesc : "INSERT INTO groupmember - FAIL"});
 		    	}
 		    	else{
 			        console.log("INSERT INTO groupmember : "+rows.affectedRows);
@@ -117,7 +116,7 @@ router.get('/',function(req,res){
 		});
 	}
 	else{
-		res.json({"status":401});
+		res.json({"status":300, errorDesc : "parameter Error"});
 	}
 });
 
