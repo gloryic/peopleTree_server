@@ -6,52 +6,75 @@ var async = require('async');
 
 router.get('/', function(req, res) {
 
-	var userPhoneNumber = req.query.userPhoneNumber;
-    var userId = req.query.userId;
+    var userNumber = req.query.userNumber;
 
-	if(userId == undefined && userPhoneNumber == undefined){
-		res.json({"status":300, errorDesc : "parameter Error"});
+	if(userNumber == undefined){
+		res.json({status:300, errorDesc : "parameter Error"});
 	}
-	else if(userPhoneNumber == undefined){
-		userPhoneNumber = 0;
-	}
-	else if(userId == undefined){
-		userId = 0;
-	}
-
-    var logoutData = [userPhoneNumber,userId];
-    console.log("logoutData : " + logoutData);
 
     async.waterfall([
 
-    	/*
-		  function(callback) {
-		    console.log('--- async.waterfall #1 ---');
-		    var query = dbcon.query('SELECT 1 FROM idinfo WHERE	(userId=? OR userPhoneNumber=?) AND password=?',loginData,function(err,rows){
-	        	console.log("rows.length : "+rows.length);
-		    	if (rows.length == 0){
-		    		res.json({status:300, errorDesc : "SELECT FROM idinfo - Login FAIL"});
+    	  //DB에 반영하고 로그 아웃한다.
+    	  //반영 될거, groupmember 테이블의 groupId, edgeStatus, parentGroupMemberId, manageMode, managedLocationRadius
+    	  function(callback) {
+		    console.log('--- async.waterfall logout #1 ---');
+
+	        tree.hgetall("H/"+userNumber, function(err,obj){
+
+		        if(!err){
+		        	if(obj!=null){
+		        		var logoutData=[obj.groupId, obj.edgeStatus, obj.parentGroupMemberId, obj.manageMode, obj.managedLocationRadius, userNumber];
+						console.log("logoutData : " + logoutData);
+						callback(null, logoutData);
+					}
+					else{
+						callback({state:400, errDesc : "not loging User"}, null);
+					}
+		      	}
+		        else
+		          callback(err, null);
+		    });
+		  },
+
+		  function(logoutData,callback) {
+		    console.log('--- async.waterfall logout #2 ---');
+		    var query = dbcon.query('UPDATE groupmember SET groupId=?, edgeStatus=?, parentGroupMemberId=?, '
+		    							+ 'manageMode=?, managedLocationRadius=? WHERE userNumber=?',logoutData,function(err,rows){
+	        	
+	        	console.log("rows.affectedRows : "+rows.affectedRows);
+		    	if (rows.affectedRows == 0){
+		    		res.json({status:300, errorDesc : "UPDATE groupmember - update FAIL"});
 		    	}
 		    	else{
-		    		console.log("SELECT FROM idinfo : "+ rows[0]);
-		    		callback(null, userId);
+		    		console.log("UPDATE groupmemberId : " + logoutData[5]);
+		    		callback(null, logoutData[5]);
 		    	}
 	    	});
 		  },
-		  */
 
-		  function(userId,callback) {
-		    console.log('--- async.waterfall insertNode #1 ---');
-			peopleTree.insertNode(userId,function(res){
-				console.log("insertNode : "+JSON.stringify(res));
-				callback(null, 'login-Success');
+		  function(userNumber,callback) {
+		    console.log('--- async.waterfall logout #2 ---');
+			peopleTree.deleteNode(userNumber,function(err,deleteNumber){
+
+				if(deleteNumber==3)
+					console.log("3 means that parent's child, hash and list is deleted : "+deleteNumber);
+				else
+					console.log("2 means that hash and list is deleted : "+deleteNumber);
+
+				if(!err)
+					callback(null, 'logout-Success');
+				else
+					callback(null, 'logout-NotSuccess');
 			});
 		  }
 		],
 		function(err, results) {
-		  console.log('--- async.waterfall result #1 ---');
+		  console.log('--- async.waterfall logout result #1 ---');
 		  console.log(arguments);
-		  res.json({status:'200', responseData : results});
+		  if(!err)
+		  	res.json({status:200, responseData : results});
+		  else
+		  	res.json(err);
 		});
 });
 

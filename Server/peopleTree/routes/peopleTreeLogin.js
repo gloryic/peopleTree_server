@@ -11,7 +11,7 @@ router.get('/', function(req, res) {
     var password = req.query.password;
 
 	if( password == undefined || (userId == undefined && userPhoneNumber == undefined)){
-		res.json({"status":300, errorDesc : "parameter Error"});
+		res.json({status:300, errorDesc : "parameter Error"});
 	}
 	else if(userPhoneNumber == undefined){
 		userPhoneNumber = 0;
@@ -23,34 +23,35 @@ router.get('/', function(req, res) {
     var loginData = [userId,userPhoneNumber,password];
     console.log("loginData : " + loginData);
     async.waterfall([
-
 		  function(callback) {
-		    console.log('--- async.waterfall #1 ---');
-		    var query = dbcon.query('SELECT 1 FROM idinfo WHERE	(userId=? OR userPhoneNumber=?) AND password=?',loginData,function(err,rows){
-
+		    console.log('--- async.waterfall login #1 ---');
+		    var query = dbcon.query('SELECT userNumber FROM idinfo WHERE (userId=? OR userPhoneNumber=?) AND password=?',loginData,function(err,rows){
 	        	console.log("rows.length : "+rows.length);
 		    	if (rows.length == 0){
 		    		res.json({status:300, errorDesc : "SELECT FROM idinfo - Login FAIL"});
 		    	}
 		    	else{
-		    		console.log("SELECT FROM idinfo : "+ rows[0]);
-		    		callback(null, userId);
+		    		console.log("SELECT FROM idinfo : "+ rows[0].userNumber);
+		    		callback(null, rows[0].userNumber);
 		    	}
 	    	});
 		  },
-
-		  function(userId,callback) {
-		    console.log('--- async.waterfall insertNode #2 ---');
-			peopleTree.insertNode(userId,function(res){
-				console.log("insertNode : "+JSON.stringify(res));
-				callback(null, 'login-Success');
+		  function(userNumber,callback) {
+		    console.log('--- async.waterfall login #2 ---');
+			peopleTree.insertNode(userNumber,function(err,res){
+				if(!err)
+					callback(null, res);
+				else
+					callback(err, 'login-fail');
 			});
 		  }
 		],
 		function(err, results) {
-		  console.log('--- async.waterfall result #1 ---');
-		  console.log(arguments);
-		  res.json({status:'200', responseData : results});
+		  console.log('--- async.waterfall result login #1 ---');
+		  if(!err)
+		  	res.json({status:200, responseData : results});
+		  else
+		  	res.json({status:400, errorDesc : err});
 		});
 });
 

@@ -112,11 +112,14 @@ router.get('/',function(req,res){
 		function(err, results) {
 		  console.log('--- async.waterfall result #1 ---');
 		  console.log(arguments);
-		  res.json({"status":200});
+		  if(!err)
+		  	res.json({status:200, responseData :"make group success"});
+		  else
+		  	res.json({status:500, responseData :"make group failed"});
 		});
 	}
 	else{
-		res.json({"status":300, errorDesc : "parameter Error"});
+		res.json({status:300, errorDesc : "parameter Error"});
 	}
 });
 

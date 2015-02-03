@@ -12,20 +12,13 @@ router.get('/group/member',function(req,res){
 	var data, data2, longitude, latitude;
 	var queryString="";
 	
-	var userId = req.query.userId;
-    var userPhoneNumber = req.query.userPhoneNumber;
+	var userNumber = req.query.userNumber;
 
-	if(userId == undefined && userPhoneNumber == undefined){
-		res.json({"status":300});
-	}
-	else if(userPhoneNumber == undefined){
-		queryString = 'SELECT userId, userNumber, userPhoneNumber, userName FROM idinfo WHERE userId='+"'"+userId+"'";
-	}
-	else if(userId == undefined){
-		queryString = 'SELECT userId, userNumber, userPhoneNumber, userName FROM idinfo WHERE userPhoneNumber='+"'"+userPhoneNumber+"'";
+	if(userNumber == undefined){
+		res.json({status:300});
 	}
 	else{
-		queryString = 'SELECT userId, userNumber, userPhoneNumber, userName FROM idinfo WHERE userId='+"'"+userId+"'" + ' AND userPhoneNumber='+"'"+userPhoneNumber+"'";
+		queryString = 'SELECT userId, userNumber, userPhoneNumber, userName FROM idinfo WHERE userNumber='+"'"+userNumber+"'";
 	}
 
 	console.log(queryString);
@@ -33,7 +26,7 @@ router.get('/group/member',function(req,res){
 	var query = dbcon.query(queryString, function(err,rows){
 		if(err){
             	console.log(err);
-            	res.json({"status":400});
+            	res.json({status:500, errorDesc : "RDBMS error"});
             }
             else{
                 if(rows.length == 1){
@@ -41,19 +34,18 @@ router.get('/group/member',function(req,res){
                 	data = rows[0];
                 	console.log("userNumber: "+data.userNumber);
 
-                	var query = dbcon.query('SELECT groupMemberId, groupId, userId, edgeStatus, parentGroupMemberId FROM groupmember WHERE userNumber=?', data.userNumber, function(err,rows){
+                	var query = dbcon.query('SELECT groupMemberId, groupId, userId, edgeStatus, parentGroupMemberId,' 
+                								+ 'manageMode, managedLocationRadius FROM groupmember WHERE userNumber=?', data.userNumber, function(err,rows){
 			            console.log(err);
 			            if(err){
 			            	console.log(err);
-			            	res.json({"status":400});
+			            	res.json({status:400});
 			            }
 			            else{
 			                if(rows.length == 1){
 								data2 = rows[0];
 
-								peopleTree.getItems(data2.groupId,data2.groupMemberId,function(err,obj){
-
-									console.log("redis_obj : "+obj);
+								peopleTree.getItems(data2.groupMemberId,function(err,obj){
 
 									//로그인 상태라면 메모리에서 값을 읽어온다.
 									if(obj!=null){
@@ -72,7 +64,7 @@ router.get('/group/member',function(req,res){
 
 									console.log("location : "+latitude +"/"+ longitude);
 
-				                    res.json({"status":200, responseData :  {
+				                    res.json({status:200, responseData :  {
 				                    											"userId":data.userId,
 				                    											"userNumber":data.userNumber,
 				                    											"groupMemberId":data2.groupMemberId,
@@ -80,23 +72,25 @@ router.get('/group/member',function(req,res){
 				                    											"userName":data.userName, 
 				                    											"groupId":data2.groupId,
 												                                "userPhoneNumber":data.userPhoneNumber,
-												                                "edgeStatus":data2.edgeStatus, 
-												                                "longitude" : longitude,
-												                                "latitude" : latitude,
-												                                "managingTotalNumber" : managingTotalNumber,
-												                                "managingNumber" : managingNumber
+												                                "edgeStatus":data2.edgeStatus,
+												                                "manageMode":data2.manageMode,
+												                                "managedLocationRadius":data2.managedLocationRadius,
+												                                "longitude" : parseFloat(longitude),
+												                                "latitude" : parseFloat(latitude),
+												                                "managingTotalNumber" : parseInt(managingTotalNumber),
+												                                "managingNumber" : parseInt(managingNumber)
 												                            }
 									});
 								});
 			                }
 			                else{
-			                     res.json({"status":401});
+			                     res.json({status:401});
 			                }
 			            }
 				    });
                 }
                 else{
-			        res.json({"status":401});
+			        res.json({status:401});
 			    }
             }
     });
