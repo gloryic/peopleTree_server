@@ -38,7 +38,7 @@ router.get('/updateLocation', function(req, res) {
 
 router.get('/deleteNode', function(req, res) {
 
-	var userNumber = req.query.userNumber;
+	var groupMemberId = req.query.groupMemberId;
 	peopleTree.deleteNode(userNumber,function(err,obj){
 
 		if(!err){
@@ -195,6 +195,8 @@ router.get('/checkLocation', function(req, res) {
 
 	peopleTree.checkLocation(groupMemberId, parentGroupMemberId, manageMode, function(err,obj){
 
+		console.log(err);
+
 		if(!err){
 			console.log("/checkLocation : "+ JSON.stringify(obj));
 			res.json(obj);
@@ -203,6 +205,37 @@ router.get('/checkLocation', function(req, res) {
 			res.json(err);
 		}
 	});
+});
+
+
+router.get('/checkGeofencingMode', function(req, res) {
+
+	var groupMemberId = req.query.groupMemberId;
+	var parentGroupMemberId = req.query.parentGroupMemberId;
+
+	peopleTree.checkGeofencingMode(groupMemberId, parentGroupMemberId, function(err,obj){
+
+		console.log(err);
+
+		if(!err){
+			console.log("/checkGeofencingMode : "+ JSON.stringify(obj));
+			res.json(obj);
+		}
+		else{
+			res.json(err);
+		}
+	});
+});
+
+
+router.get('/isPointOnLine', function(req, res) {
+
+	var A={lat : 0, lng : 3};
+	var B={lat : 0, lng : 0};
+	var P={lat : 0, lng : -2};
+
+	res.json(peopleTree.isPointOnLine(A,B,P));
+
 });
 
 module.exports = router;

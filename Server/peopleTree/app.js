@@ -11,7 +11,6 @@ var redis = require('redis');
 var PeopleTree = require('./routes/location/peopleTree');
 
 var index = require('./routes/index');
-var ptree = require('./routes/ptree'); // REF
 var ptreeLogin = require('./routes/peopleTreeLogin');
 var ptreeLogout = require('./routes/peopleTreeLogout');
 
@@ -41,7 +40,6 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/main', index);
-app.use('/ptree', ptree);
 app.use('/ptree/login', ptreeLogin);
 app.use('/ptree/logout', ptreeLogout);
 

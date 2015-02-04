@@ -100,35 +100,6 @@ PeopleTree.prototype.insertNode = function(userNumber, f) {
       });
 };
 
-/*
-PeopleTree.prototype.makeGroup = function(groupId, f) {
-  tree.hgetall("H/"+groupId, function(err,obj){
-
-    console.log("makeGroup : " + JSON.stringify(obj));
-    if(!err){
-      if(obj!=null){
-        //그릅 새로 만들기
-          request( {
-            method: 'GET',
-            url: 'http://210.118.74.107:3000/ptree/_getinfo/group/member?userNumber='+userNumber,
-          }, function(err, response) {
-
-            if(!err){
-              var items = JSON.parse(response.body).responseData;
-              tree.hmset("H/"+items.groupId, items);
-              return f(items);
-            }
-            else
-              return f(err);
-          });
-      }
-    }
-    else
-      return f(err,null);
-    });
-};
-*/
-
 PeopleTree.prototype.getItems = function(groupMemberId, f) {
     tree.hgetall("H/"+groupMemberId, function(err,obj){
         console.log("getItems_hgetall : " + JSON.stringify(obj));
@@ -464,7 +435,7 @@ PeopleTree.prototype.deleteNode = function(groupMemberId, f) {
             callback(err.message, null);
           });
       },
-      //나의 리스트 지우기
+      //나의 트리를 위한 리스트 지우기
       function (hashDeleteNumber, callback) {
         console.log('--- async.waterfall delete Node #5--');
 
@@ -477,7 +448,21 @@ PeopleTree.prototype.deleteNode = function(groupMemberId, f) {
           else
             callback(err.message, null);
           });
-      }
+      },
+      //나의 위치를 위한 리스트 지우기
+      function (listDeleteNumber, callback) {
+        console.log('--- async.waterfall delete Node #5--');
+
+          tree.del("G/"+groupMemberId, function(err,deleteNumber){
+
+          console.log("G deleteNode : "+deleteNumber);
+
+          if(!err)
+            callback(null, deleteNumber+listDeleteNumber);
+          else
+            callback(err.message, null);
+          });
+      }      
     ],
 
     function(err, results) {
@@ -507,10 +492,8 @@ PeopleTree.prototype.isRoot = function(groupMemberId, f) {
 
 //부모가 정한 유효 범위에 있는지 체크한다.
 //manageMode는 
-
 //100은 관리대상
 //200은 관리자
-
 //210은 트레킹 모드. 참조값 : 관리자의 위치, 반경
 //220 지역모드 : 중심 위치, 반경
 //230은 지오펜스모드
@@ -519,6 +502,19 @@ PeopleTree.prototype.isRoot = function(groupMemberId, f) {
 //G/{groupMemberId} : 0번 반경, 
 PeopleTree.prototype.changeManageMode = function(groupMemberId, manageMode, f) {
   tree.hset('H/'+groupMemberId, 'manageMode', manageMode, function(err, updateNumber){
+    if(!err){
+      if(updateNumber==1)
+        return f(null, 1);
+      else
+        return f(null, 0);
+    }
+    else
+      return f(err.message, null);
+  });
+}
+
+PeopleTree.prototype.changeEdgeStatus = function(groupMemberId, edgeStatus, f) {
+  tree.hset('H/'+groupMemberId, 'edgeStatus', edgeStatus, function(err, updateNumber){
     if(!err){
       if(updateNumber==1)
         return f(null, 1);
@@ -602,7 +598,7 @@ PeopleTree.prototype.checkLocation = function(groupMemberId, parentGroupMemberId
         else return f({state:400, errorDesc : "error on get distance"}, null);
       }
       else
-        return f(err.message, null);
+        return f(err, null);
     });
   }
   //지오펜스 모드
@@ -708,14 +704,33 @@ PeopleTree.prototype.checkTrackingModeAndAreaMode = function(groupMemberId, pare
 
         if(radius < distance) validation = false;
 
-        callback(null, {radius: radius, distance: distance, validation : validation});
+        //validation==false 면 edgeStatus를 300으로 변경
+        if(!validation){
+          peopleTree.changeEdgeStatus(groupMemberId, 300, function(err, updateNumber){
+            if(!err){
+              if(updateNumber==0) callback(null, {radius: radius, distance: distance, edgeStatus: "change 300", validation : validation});
+              else callback({state:300,errorDesc:"not exist edgeStatus"},null);
+            }
+            else
+              callback(err.message, null);
+          });
+        }
+        else{
+          peopleTree.changeEdgeStatus(groupMemberId, 200, function(err, updateNumber){
+            if(!err){
+              if(updateNumber==0) callback(null, {radius: radius, distance: distance, edgeStatus: "change 200", validation : validation});
+              else callback({state:300,errorDesc:"not exist edgeStatus"},null);
+            }
+            else
+              callback(err.message, null);
+          });
+        }
       }
   ],
 
   function(err, results) {
     console.log('--- async.waterfall result checkTrackingModeAndAreaMode Node #1 ---');
     console.log(arguments);
-
     if(!err)
       return f(null,results)
     else{
@@ -725,12 +740,155 @@ PeopleTree.prototype.checkTrackingModeAndAreaMode = function(groupMemberId, pare
   });
 }
 
-PeopleTree.prototype.checkAreaMode = function(groupMemberId, parentGroupMemberId, f) {
-  console.log("checkAreaMode");
+//A(x1, y1), B(x2, y2), P(x3, y3)
+PeopleTree.prototype.isPointOnLine = function(A, B, P){
+
+  var validation = true;
+  var x1, y1, x2, y2, x3, y3, xk, yk, k;
+  x1=A.lat; y1=A.lng; x2=B.lat; y2=B.lng; x3=P.lat; y3=P.lng;
+
+  var a = (y2-y1);
+  var b = -1*(x2-x1);
+  var c = (y1*(x2-x1) - (a*x1));
+
+  console.log("a = "+a);
+   console.log("b = "+b);
+    console.log("c = "+c);
+
+  k = ((-1)*(a*x3+b*y3+c)/(a*a + b*b));
+  xk = x3 + a*k;
+  yk = y3 + b*k;
+
+  console.log("xk : "+ xk);
+  console.log("yk : "+ yk);
+
+  var max_X = x1 > x2 ? x1 : x2;
+  var min_X = x1 < x2 ? x1 : x2;
+
+  var max_Y = y1 > y2 ? y1 : y2;
+  var min_Y = y1 < y2 ? y1 : y2;
+
+  console.log("yk < min_Y : "+yk+"<"+min_Y);
+
+  if(xk > max_X) validation = false;
+  if(xk < min_X) validation = false;
+  if(yk > max_Y) validation = false;
+  if(yk < min_Y) validation = false;
+
+  return validation;
 }
 
 PeopleTree.prototype.checkGeofencingMode = function(groupMemberId, parentGroupMemberId, f) {
-    console.log("checkGeofencingMode");
+  console.log("checkGeofencingMode");
+
+  var validation = true;
+  var point={lat: 0, lng: 0}; //위도(lat), 경도(lng)
+
+  async.waterfall([
+
+      function(callback){
+         console.log('--- async.waterfall checkGeofencingMode Node #1 ---');
+         peopleTree.getLocation(groupMemberId, function(err, obj){
+          if(!err){
+            if(obj.longitude && obj.latitude){
+              point.lat = obj.latitude;
+              point.lng = obj.longitude;
+              callback(null);
+            }
+            else callback({state:400, errorDesc:"your location is null"},null);
+          }
+          else callback(err.message,null);
+         });
+      },
+
+      function(callback){
+         console.log('--- async.waterfall checkGeofencingMode Node #2 ---');
+          tree.lrange('G/'+parentGroupMemberId, 1, -1, function (err, items) {
+            console.log('item.length : '+items.length);
+            console.log('item.length : '+JSON.stringify(items));
+
+            if (!err){
+              var length = items.length;
+              var past={lat:0, lng:0};
+              var cur={lat:0, lng:0};
+              var first={lat:0, lng:0};
+
+              if(length < 8) callback({state:300,errorDesc:"not enough point, more than triangle"},null);
+
+              cur.lat = items[0];
+              cur.lng = items[1];
+
+              first.lat = items[0];
+              first.lng = items[1];
+              var flag = true;
+
+              for (i = 2; i < length; i++) { 
+
+                past.lat = cur.lat;
+                past.lng = cur.lng;
+                cur.lat = items[i];
+                cur.lng = items[++i];
+
+                console.log("past : "+JSON.stringify(past));
+                console.log("cur : "+JSON.stringify(cur));
+
+                flag = peopleTree.isPointOnLine(past,cur,point);
+
+                if(!flag)
+                  break;
+              }
+
+              if(!flag)
+                callback(null,false);
+              else{
+                console.log("first : "+JSON.stringify(first));
+                console.log("cur : "+JSON.stringify(cur));
+                if(!peopleTree.isPointOnLine(first,cur,point))
+                    callback(null,false);
+                else
+                  callback(null,true);
+              }
+            }
+            else
+              callback(err.message,null);
+          });
+      },
+
+      function(validation, callback){
+        console.log('--- async.waterfall checkTrackingModeAndAreaMode Node #4 ---');
+        //validation==false 면 edgeStatus를 300으로 변경
+        if(!validation){
+          peopleTree.changeEdgeStatus(groupMemberId, 300, function(err, updateNumber){
+            if(!err){
+              if(updateNumber==0) callback(null, {edgeStatus: "change 300", validation : validation});
+              else callback({state:300,errorDesc:"not exist edgeStatus"},null);
+            }
+            else
+              callback(err.message, null);
+          });
+        }
+        else{
+          peopleTree.changeEdgeStatus(groupMemberId, 200, function(err, updateNumber){
+            if(!err){
+              if(updateNumber==0) callback(null, {edgeStatus: "change 200", validation : validation});
+               else callback({state:300,errorDesc:"not exist edgeStatus"},null);
+            }
+            else
+              callback(err.message, null);
+          });
+        }
+      }
+  ],
+
+  function(err, results) {
+    console.log('--- async.waterfall result checkGeofencingMode Node #1 ---');
+    console.log(arguments);
+    if(!err)
+      return f(null,results)
+    else{
+      return f(err, null)
+    }
+  });
 }
 
 PeopleTree.prototype.broadcast = function(groupMemberId, depth, f) {

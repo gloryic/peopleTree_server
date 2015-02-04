@@ -55,20 +55,23 @@ http://210.118.74.107:3000/ptree/getinfo/group/member?userNumber=26
 #해당 유저를 루트로한 트리를 보여준다.
 http://210.118.74.107:3000/ptree/test/showTree?rootGroupId=27
 
-#유저아이디로 디비에서 정보를 가져와 노드로 삽입한다.
-http://210.118.74.107:3000/ptree/test/insertNode?userId=blah
+#유저번호로 디비에서 정보를 가져와 노드로 삽입한다.
+http://210.118.74.107:3000/ptree/test/insertNode?userNumber=blah
 
-#그룹멤버 아이디로 디비에서 정보를 가져와 경도, 위도, 관리총인원, 관리인원을 추가해 노드로 생성한다.
+#그룹멤버 아이디로 redis의 해시 테이블에 저장된 정보를 가져온다.
 http://210.118.74.107:3000/ptree/test/getItems?groupMemberId=12
 
 #위치정보를 업데이트한다.
-210.118.74.107:3000/ptree/test/setLocation?groupMemberId=20
+http://210.118.74.107:3000/ptree/test/setLocation?groupMemberId=26&latitude=126.946035&longitude=37.554339
+
+#위치정보를 가져온다.
+http://210.118.74.107:3000/ptree/test/getLocation?groupMemberId=27
 
 #노드를 삭제한다.
-http://210.118.74.107:3000/ptree/test/deleteNode
+http://210.118.74.107:3000/ptree/test/deleteNode?groupMemberId=27
 
 #루트노드 인지 확인한다.
-http://210.118.74.107:3000/ptree/test/isRoot
+http://210.118.74.107:3000/ptree/test/isRoot?groupMemberId=27
 
 #부모를 바꾼다.
 http://210.118.74.107:3000/ptree/test/changeParent?myGroupMemberId=1&parentGroupMemberId=1
@@ -76,6 +79,8 @@ http://210.118.74.107:3000/ptree/test/changeParent?myGroupMemberId=1&parentGroup
 #부모가 정한 지역에 내가 있는지 확인한다. 210 - 트레킹 모드, 220 - 지역모드
 http://210.118.74.107:3000/ptree/test/checkLocation?groupMemberId=26&parentGroupMemberId=27&manageMode=220
 
+#븉으려고 하는 노드의 부모중에 내가 있으면 안된다. 이걸 체크
+http://210.118.74.107:3000/ptree/test/isValidChange?myGroupMemberId=27&parentGroupMemberId=26
 
 #################
 #URI test
@@ -114,10 +119,22 @@ http://210.118.74.107:3000/ptree/make/group?userPhoneNumber=01011113333&userId=j
         "managingNumber":0
 }
 
-## "L/그룹아이디" 로 리스트 생성 트리 구조관리
+## "L/그룹멤버아이디" 로 리스트 생성 트리 구조관리
 0번은 자기 자신의 그룹아이디
 1번은 직계 부모의 그룹아아디
 2번 이후에는 자식들의 그룹아이디
+
+## "G/그룹멤버아이디" 로 리스트를 생성 지역 설정 값을 관리한다.
+슈퍼키는 그룹멤버아이디
+210 : 트레킹 모드라면 길이는 1 , 0번 만 쓴다.
+220 : 지역 모드라면 길이는 3, 한포인트만 쓴다.
+230 : 지오펜싱 모드는 다각형의 꼭지점 n, 1+2n 수만큼 쓴다.
+0번은 반경
+1번은 위도1
+2번은 경도1
+3번은 위도2
+4번은 경도2
+...
 
 [groupMemberId, parentGroupMemberId, childGroupMemberId, ...]
 

@@ -56,10 +56,11 @@ router.get('/', function(req, res) {
 		    console.log('--- async.waterfall logout #2 ---');
 			peopleTree.deleteNode(userNumber,function(err,deleteNumber){
 
-				if(deleteNumber==3)
-					console.log("3 means that parent's child, hash and list is deleted : "+deleteNumber);
+				if(deleteNumber==4)
+					//내부모의 자식에서 나를 지우고, 나의 해시랑 리스트를 지운다.
+					console.log("4 means that parent's child, hash and 2 list is deleted : "+deleteNumber);
 				else
-					console.log("2 means that hash and list is deleted : "+deleteNumber);
+					console.log("3 means that hash and 2 list is deleted : "+deleteNumber);
 
 				if(!err)
 					callback(null, 'logout-Success');
