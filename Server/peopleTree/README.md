@@ -22,9 +22,8 @@ state
 디비에 있는 부모 아이디는 나의 최근 부모가 누구였는지 알려주는 역활을 할뿐이다.
 이 값을 가지고 다시 트리를 구성하지 않는다.
 
-#가입자 정보 가져오기는 userPhoneNumber, userId 두가지로 가져올 수 있다.
-1. http://210.118.74.107:3000/ptree/getinfo/group/member?userPhoneNumber=01028790924
-2. http://210.118.74.107:3000/ptree/getinfo/group/member?userId=glory1
+#가입자 정보 가져오기는 userNumber 로 가져온다.
+http://210.118.74.107:3000/ptree/getinfo/group/member?userNumber=26
 
 #getinfo 응답 값 
 {
@@ -63,7 +62,7 @@ http://210.118.74.107:3000/ptree/test/insertNode?userId=blah
 http://210.118.74.107:3000/ptree/test/getItems?groupMemberId=12
 
 #위치정보를 업데이트한다.
-http://210.118.74.107:3000/ptree/test/updateLocation
+210.118.74.107:3000/ptree/test/setLocation?groupMemberId=20
 
 #노드를 삭제한다.
 http://210.118.74.107:3000/ptree/test/deleteNode
@@ -74,12 +73,16 @@ http://210.118.74.107:3000/ptree/test/isRoot
 #부모를 바꾼다.
 http://210.118.74.107:3000/ptree/test/changeParent?myGroupMemberId=1&parentGroupMemberId=1
 
+#부모가 정한 지역에 내가 있는지 확인한다. 210 - 트레킹 모드, 220 - 지역모드
+http://210.118.74.107:3000/ptree/test/checkLocation?groupMemberId=26&parentGroupMemberId=27&manageMode=220
+
+
 #################
 #URI test
 #################
 
 #가입자 정보 가져오기
-http://210.118.74.107:3000/ptree/getinfo/group/member?userId=glory1 //DataBase를 참조하며, 경도,위도, 관리인원은 redis를 참조한다.
+http://210.118.74.107:3000/ptree/getinfo/group/member?userNumber=26 //DataBase를 참조하며, 경도,위도, 관리인원은 redis를 참조한다.
 
 #회원가입 URL - idinfo, grouplist, groupmember에 레코드가 삽입되며, 서버 메모리에 노드로서 생성된다.
 http://210.118.74.107:3000/ptree/make/group?userPhoneNumber=01011112222&userId=jakimg&password=123&userName=abc&groupName=first111

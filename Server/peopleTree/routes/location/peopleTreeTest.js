@@ -92,7 +92,6 @@ router.get('/showTree', function(req, res) {
 	position.push({id : 3, children:[]});
 	position[this.length-1].children.push({id : 4, children:[]});
 	*/
-
 	peopleTree.isExist(rootGroupMemberId, function(err,flag){
 		if(!err){
 			if(flag){
@@ -112,6 +111,96 @@ router.get('/showTree', function(req, res) {
 		}
 		else{
 			res.json({state:500,errorDesc:"redis error"});
+		}
+	});
+});
+
+router.get('/isValidChange', function(req, res) {
+
+	var myGroupMemberId = req.query.myGroupMemberId;
+	var parentGroupMemberId = req.query.parentGroupMemberId;
+
+	peopleTree.isValidChange(myGroupMemberId,parentGroupMemberId,function(err,obj){
+
+		if(!err){
+			console.log("/isValidChange : "+ JSON.stringify(obj));
+			res.json(obj);
+		}
+		else{
+			res.json(err);
+		}
+	});
+});
+
+
+router.get('/setLocation', function(req, res) {
+
+	var groupMemberId = req.query.groupMemberId;
+	var longitude = req.query.longitude;
+	var latitude = req.query.latitude;
+
+	peopleTree.updateLocation(groupMemberId, latitude, longitude, function(err,obj){
+
+		if(!err){
+			console.log("/setLocation : "+ JSON.stringify(obj));
+			res.json(obj);
+		}
+		else{
+			res.json(err);
+		}
+	});
+});
+
+
+router.get('/getLocation', function(req, res) {
+
+	var groupMemberId = req.query.groupMemberId;
+
+	peopleTree.getLocation(groupMemberId, function(err,obj){
+
+		if(!err){
+			console.log("/getLocation : "+ JSON.stringify(obj));
+			res.json(obj);
+		}
+		else{
+			res.json(err);
+		}
+	});
+});
+
+
+router.get('/checkTrackingModeAndAreaMode', function(req, res) {
+
+	var groupMemberId = req.query.groupMemberId;
+	var parentGroupMemberId = req.query.parentGroupMemberId;
+	var manageMode = req.query.manageMode;
+
+	peopleTree.checkTrackingModeAndAreaMode(groupMemberId, parentGroupMemberId, manageMode, function(err,obj){
+
+		if(!err){
+			console.log("/checkTrackingModeAndAreaMode : "+ JSON.stringify(obj));
+			res.json(obj);
+		}
+		else{
+			res.json(err);
+		}
+	});
+});
+
+router.get('/checkLocation', function(req, res) {
+
+	var groupMemberId = req.query.groupMemberId;
+	var parentGroupMemberId = req.query.parentGroupMemberId;
+	var manageMode = req.query.manageMode;
+
+	peopleTree.checkLocation(groupMemberId, parentGroupMemberId, manageMode, function(err,obj){
+
+		if(!err){
+			console.log("/checkLocation : "+ JSON.stringify(obj));
+			res.json(obj);
+		}
+		else{
+			res.json(err);
 		}
 	});
 });
