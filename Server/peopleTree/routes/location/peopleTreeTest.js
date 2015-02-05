@@ -7,7 +7,7 @@ router.get('/insertNode', function(req, res) {
 	peopleTree.insertNode(userNumber,function(res){
 		console.log(res);
 	});
-    res.json("welcom to Location Compare API");
+    res.json("welcom to Location insertNode API");
 });
 
 router.get('/getItems', function(req, res) {
@@ -230,7 +230,7 @@ router.get('/setGeoPoint', function(req, res) {
 
 	var groupMemberId = req.query.groupMemberId;
 	var radius = req.query.radius;
-	var points = [{lat:3,lng:1},{lat:2,lng:5}];//req.query.points;//[{}]
+	var points;// = [{lat:3,lng:1},{lat:2,lng:5}];//req.query.points;//[{}]
 
 	peopleTree.setGeoPoint(groupMemberId, radius, points, function(err,obj){
 
@@ -242,8 +242,6 @@ router.get('/setGeoPoint', function(req, res) {
 			res.json(err);
 		}
 	});
-
-
 });
 
 module.exports = router;

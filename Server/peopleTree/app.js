@@ -20,7 +20,6 @@ var makeGroup = require('./routes/group/makeGroup');
 var getCurInfo = require('./routes/getinfo/getCurInfo');
 var getInfo = require('./routes/getinfo/getInfo');
 
-var _Location = require('./routes/location/location');
 var treeTest = require('./routes/location/peopleTreeTest');
 
 var app = express();
@@ -47,7 +46,6 @@ app.use('/ptree/make/edge', makeEdge);
 app.use('/ptree/make/group', makeGroup);
 app.use('/ptree/getinfo', getCurInfo);//get from redis and RDB
 app.use('/ptree/_getinfo', getInfo);//get from RDB
-app.use('/ptree/check', _Location);
 app.use('/ptree/test', treeTest);
 
 /// catch 404 and forwarding to error handler

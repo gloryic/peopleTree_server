@@ -76,11 +76,18 @@ http://210.118.74.107:3000/ptree/test/isRoot?groupMemberId=27
 #부모를 바꾼다.
 http://210.118.74.107:3000/ptree/test/changeParent?myGroupMemberId=1&parentGroupMemberId=1
 
-#부모가 정한 지역에 내가 있는지 확인한다. 210 - 트레킹 모드, 220 - 지역모드
+#부모가 정한 지역에 내가 있는지 확인한다. 210 - 트레킹 모드, 220 - 지역모드, 230, 지오펜싱 모드
 http://210.118.74.107:3000/ptree/test/checkLocation?groupMemberId=26&parentGroupMemberId=27&manageMode=220
 
 #븉으려고 하는 노드의 부모중에 내가 있으면 안된다. 이걸 체크
 http://210.118.74.107:3000/ptree/test/isValidChange?myGroupMemberId=27&parentGroupMemberId=26
+
+#지오펜싱 모드 체크
+http://210.118.74.107:3000/ptree/test/checkGeofencingMode?groupMemberId=26&parentGroupMemberId=27
+
+#관리자의 관리 지역설정 하기 
+#points의 길이가 1이면 220 - 지역 모드에서 쓰인다. n이면 지오펜싱 모드
+http://210.118.74.107:3000/ptree/test/setGeoPoint?groupMemberId=26&radius=10&points=[{lat:0,lng:0},{lat:0,lng:0},...]
 
 #################
 #URI test

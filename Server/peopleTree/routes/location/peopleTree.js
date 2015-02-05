@@ -2,7 +2,6 @@ var _     = require('lodash');
 var async = require('async');
 var request = require('request');
 var url = require('url');
-//var distance = require('google-distance');
 var gps = require('gps-util');
 
 function PeopleTree(redisClient){}
@@ -155,61 +154,7 @@ PeopleTree.prototype.isValidChange = function(groupMemberId, parentGroupMemberId
   });
 }
 
-
 PeopleTree.prototype.changeParent = function(groupMemberId, parentGroupMemberId, f) {
-
-  /*
-  tree.hgetall("H/"+groupMemberId, function(err,obj){
-    console.log("myData : " + JSON.stringify(obj));
-    if(!err){
-      if(obj!=null){
-            tree.hgetall("H/"+parentGroupMemberId, function(err,parentObj){
-              console.log("parentData : " + JSON.stringify(parentObj));
-              if(!err){
-                if(parentObj!=null){
-
-                    if(obj.parentGroupMemberId == parentObj.groupMemberId) return f({state:303, errorDesc:"already setting that parentId "},null);//이미 변경 하려는 부모가 내 부모
-
-                    //원래 부모에서 나를 제거한다.
-                    if(groupMemberId != obj.parentGroupMemberId)
-                      tree.lrem("L/"+obj.parentGroupMemberId, -1, groupMemberId);
-
-                    //1. 나의 부모를 변경, 2. 나의 그룹 아이디를 변경
-                    var items = {groupId:parentObj.groupId, parentGroupMemberId:parentGroupMemberId};
-                    console.log("myChangeParent : "+JSON.stringify(items));
-                    tree.hmset("H/"+groupMemberId, items);
-
-                    //부모의 관리 인원 정보를 업데이트. 내가 관리 하고 있는 인원 + 1(나)
-                    var parentitems = {
-                                        managingTotalNumber: parseInt(parentObj.managingTotalNumber,10)+parseInt(obj.managingTotalNumber,10)+1, 
-                                        managingNumber:parseInt(parentObj.managingTotalNumber,10)+parseInt(obj.managingTotalNumber,10)+1
-                                      };
-
-                    console.log("parentChangeParent : "+JSON.stringify(parentitems));
-                    tree.hmset("H/"+parentGroupMemberId, parentitems);
-
-                    //나의 부모를 변경
-                    tree.lset("L/"+groupMemberId,1,parentGroupMemberId);
-                    
-                    //부모의 자식에게 나를 추가한다.
-                    tree.rpush("L/"+parentGroupMemberId,groupMemberId);
-
-                    return f(null, {state:200, responseData : "success change parent"});//부모 바꾸기 성공
-                }
-                else
-                  return f({state:404, errorDesc:"not found that Data about ParentGroupMemberId"},null);
-              }
-              else
-                return f({state:300, errorDesc:error},null);
-            });
-      }
-      else
-        return f({state:404, errorDesc:"not found that Data about groupMemberId"},null);
-    }
-    else
-      return f({state:300, errorDesc:error},null);
-  });
-  */  
 
   peopleTree.isValidChange(groupMemberId,parentGroupMemberId, function(err,valid){
 
@@ -565,7 +510,7 @@ PeopleTree.prototype.setGeoPoint = function(groupMemberId, radius, points, f) {
   var length = 0;
   if(points) length = points.length;
 
-  console.log("length : "+length);
+  console.log("setGeo Points length : "+length);
 
   async.waterfall([
 
@@ -685,7 +630,7 @@ PeopleTree.prototype.checkLocation = function(groupMemberId, parentGroupMemberId
     peopleTree.checkTrackingModeAndAreaMode(groupMemberId,parentGroupMemberId, manageMode, function(err, result){
       if(!err){
         if(result) return f(null, result);
-        else return f({state:400, errorDesc : "error on get distance"}, null);
+        else return f({state:400, errorDesc : "error checkLocation"}, null);
       }
       else
         return f(err, null);
@@ -694,19 +639,12 @@ PeopleTree.prototype.checkLocation = function(groupMemberId, parentGroupMemberId
   //지오펜스 모드
   else if(manageMode==230){
     peopleTree.checkGeofencingMode(groupMemberId,parentGroupMemberId, function(err, result){
-
       if(!err){
-        if(result){
-
-        }
-        else{
-
-        }
+        if(result) return f(null, result);
+        else return f({state:400, errorDesc : "error checkLocation"}, null);
       }
-      else{
-
-      }
-
+      else
+        return f(err, null);
     });
   }
 }
