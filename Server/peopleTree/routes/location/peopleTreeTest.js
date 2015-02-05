@@ -23,19 +23,6 @@ router.get('/getItems', function(req, res) {
    
 });
 
-
-router.get('/updateLocation', function(req, res) {
-
-	peopleTree.updateLocation(11,2.1111,3.1111,function(err,obj){
-
-		console.log("/updateLocation : "+obj);
-		
-	});
-
-    res.json("welcom to Location updateLocation API");
-});
-
-
 router.get('/deleteNode', function(req, res) {
 
 	var groupMemberId = req.query.groupMemberId;
@@ -59,7 +46,7 @@ router.get('/isRoot', function(req, res) {
 		
 	});
 
-    res.json("welcom to Location updateLocation API");
+    res.json("welcom to Location isRoot API");
 });
 
 
@@ -139,7 +126,7 @@ router.get('/setLocation', function(req, res) {
 	var longitude = req.query.longitude;
 	var latitude = req.query.latitude;
 
-	peopleTree.updateLocation(groupMemberId, latitude, longitude, function(err,obj){
+	peopleTree.setLocation(groupMemberId, latitude, longitude, function(err,obj){
 
 		if(!err){
 			console.log("/setLocation : "+ JSON.stringify(obj));
@@ -235,6 +222,27 @@ router.get('/isPointOnLine', function(req, res) {
 	var P={lat : 0, lng : -2};
 
 	res.json(peopleTree.isPointOnLine(A,B,P));
+
+});
+
+
+router.get('/setGeoPoint', function(req, res) {
+
+	var groupMemberId = req.query.groupMemberId;
+	var radius = req.query.radius;
+	var points = [{lat:3,lng:1},{lat:2,lng:5}];//req.query.points;//[{}]
+
+	peopleTree.setGeoPoint(groupMemberId, radius, points, function(err,obj){
+
+		if(!err){
+			console.log("/setGeoPoint : "+ JSON.stringify(obj));
+			res.json(obj);
+		}
+		else{
+			res.json(err);
+		}
+	});
+
 
 });
 

@@ -67,8 +67,10 @@ PeopleTree.prototype.insertNode = function(userNumber, f) {
           console.log('--- async.waterfall insertNode #4 ---');
           if(flag){
             //tree.rpush("G/"+groupMemberId, items.manageMode);//0번 나의 관리모드
-            tree.rpush("G/"+groupMemberId, items.managedLocationRadius);//반경
-            callback(null, groupMemberId, 1);
+            tree.rpush("G/"+groupMemberId, items.managedLocationRadius, function(err,result){
+              if(!err) callback(null, groupMemberId, 1);
+              else callback(err.message,null);
+            });
           }
           else{
             callback(null, groupMemberId, 0);
@@ -551,7 +553,95 @@ PeopleTree.prototype.changeRadius = function(groupMemberId, changeRadius, f) {
   });
 }
 
-PeopleTree.prototype.updateLocation = function(groupMemberId, latitude, longitude, f) {
+//위치 유효성 검사에 사용될 포인트를 세팅한다.
+//points=[{lat:0,lng:0},{lat:0,lng:0},{lat:0,lng:0},{lat:0,lng:0}]
+PeopleTree.prototype.setGeoPoint = function(groupMemberId, radius, points, f) {
+// 0 기본
+// "G/" 지우고 다시 만들자.
+// 있다면->지운다. -> 다시 만들기
+// "G/"의 길이는 1+2*points.length
+//TODO
+
+  var length = 0;
+  if(points) length = points.length;
+
+  console.log("length : "+length);
+
+  async.waterfall([
+
+      function(callback){
+         console.log('--- async.waterfall setGeoPoint Node #1 ---');
+         tree.exists("G/"+groupMemberId, function(err, exist){
+          if(!err){
+              callback(null,exist);
+          }
+          else callback(err.message,null);
+         });
+      },
+
+      function(exist, callback){
+         console.log('--- async.waterfall setGeoPoint Node #2 ---');
+         if(exist){
+          tree.del("G/"+groupMemberId, function(err,deleteNumber){
+            console.log("G deleteNode : "+deleteNumber);
+            if(!err)
+              callback(null);
+            else
+              callback(err.message, null);
+          });
+         }
+         else callback(null);
+      },
+
+      function(callback){
+        console.log('--- async.waterfall setGeoPoint Node #3 ---');
+        tree.rpush("G/"+groupMemberId, radius, function(err,result){
+          if(!err) callback(null);
+          else callback(err.message,null);
+        });
+      },
+
+      function(callback){
+        console.log('--- async.waterfall setGeoPoint Node #4 ---');
+        var count = 0;
+        var lat, lng;
+
+        async.whilst(function () {
+          return length > count;
+        },
+        function (next) {
+
+          lat = points[count].lat;
+          lng = points[count].lng;
+
+          tree.rpush("G/"+groupMemberId, lat, function(err,listLength){
+            console.log("listLength : "+JSON.stringify(listLength));
+            tree.rpush("G/"+groupMemberId, lng, function(err,listLength){
+              console.log("listLength : "+JSON.stringify(listLength));
+              count++;
+              next();
+            });
+          });
+        },
+        function (err) {
+          callback(null, count*2+1);
+        });
+      }
+  ],
+
+  function(err, results) {
+    console.log('--- async.waterfall result setGeoPoint Node #1 ---');
+    console.log(arguments);
+    if(!err)
+      return f(null,results)
+    else{
+      return f(err, null)
+    }
+  });
+}
+
+//해쉬에 현 위치를 업데이트한다.
+PeopleTree.prototype.setLocation = function(groupMemberId, latitude, longitude, f) {
 
   peopleTree.isExist(groupMemberId, function(err,exist){
 
@@ -560,7 +650,7 @@ PeopleTree.prototype.updateLocation = function(groupMemberId, latitude, longitud
                   latitude:latitude
                 };
 
-    console.log("updateLocation : "+JSON.stringify(items));
+    console.log("setLocation : "+JSON.stringify(items));
     console.log("exist : "+exist);
 
     if(exist){
@@ -685,6 +775,7 @@ PeopleTree.prototype.checkTrackingModeAndAreaMode = function(groupMemberId, pare
       },
 
       function(callback){
+        //부모가 설정한 반경을 가져온다.
         console.log('--- async.waterfall checkTrackingModeAndAreaMode Node #3 ---');
         tree.lindex("G/"+parentGroupMemberId,0,function(err,_radius){
           var radius = parseFloat(_radius);
