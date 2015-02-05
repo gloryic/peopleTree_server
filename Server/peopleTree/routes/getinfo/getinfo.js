@@ -19,7 +19,7 @@ router.get('/group/member',function(req,res){
 		res.json({status:300});
 	}
 	else{
-		queryString = 'SELECT userId, userNumber, userPhoneNumber, userName FROM idinfo WHERE userNumber='+"'"+userNumber+"'";
+		queryString = 'SELECT userId, userNumber, userPhoneNumber, userName, regId FROM idinfo WHERE userNumber='+"'"+userNumber+"'";
 	}
 
 	console.log(queryString);
@@ -50,7 +50,8 @@ router.get('/group/member',function(req,res){
 				                    											"userNumber":data.userNumber,
 				                    											"groupMemberId":data.userNumber,//data2.groupMemberId,
 				                    											"parentGroupMemberId":data.userNumber,//data2.groupMemberId,//data2.parentGroupMemberId,
-				                    											"userName":data.userName, 
+				                    											"userName":data.userName,
+				                    											"regId":data.regId,
 				                    											"groupId":data2.groupId,
 												                                "userPhoneNumber":data.userPhoneNumber,
 												                                "edgeStatus": 200,//data2.edgeStatus, 정상상태

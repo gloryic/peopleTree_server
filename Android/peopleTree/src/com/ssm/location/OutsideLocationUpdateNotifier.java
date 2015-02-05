@@ -17,7 +17,7 @@ import com.android.volley.Response;
 import com.android.volley.Request.Method;
 import com.android.volley.VolleyError;
 import com.ssm.peopleTree.C;
-import com.ssm.peopleTree.R;
+import com.ssm.R;
 import com.ssm.peopleTree.network.NetworkManager;
 
 import android.location.Location;

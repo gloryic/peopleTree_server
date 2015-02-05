@@ -2,6 +2,7 @@ package com.ssm.peopleTree;
 
 import org.json.JSONObject;
 
+import com.ssm.R;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.os.Bundle;

@@ -1,16 +1,17 @@
-/*
-#그룹 생성 하기
-#path : POST /ptree/make/group
-#req : int ownPhoneNumber
-#res : int status, int groupId
-*/
-
 var express = require('express');
 var router = express.Router();
 var async = require('async');
+
 /*
 첫 가입시에는 사용자가 첫 로그인 및 가입을 하게되면 유저는 일인 일 그룹원의 그룹장이 되며 시작된다.
 즉 그룹테이블에도 하나의 그룹이 새로 추가되며, 그룹멤버 테이블에도 하나의 그룹원으로 추가가 된다.
+*/
+
+/*
+#그룹 생성 하기 (가입하기 step.1)
+#path : POST /ptree/make/group
+#req : int ownPhoneNumber
+#res : int status, int groupId
 */
 router.get('/',function(req,res){
     
@@ -121,6 +122,33 @@ router.get('/',function(req,res){
 	else{
 		res.json({status:300, errorDesc : "parameter Error"});
 	}
+});
+
+/*
+#regId등록하기 (가입하기 step.2)
+#path : POST /ptree/make/group
+#req : int ownPhoneNumber
+#res : int status, int groupId
+*/
+router.post('/registrationId',function(req,res){
+
+    var registrationId=req.body.registrationIds;
+    var userNumber=req.body.userNumber;	
+    var postData=[registrationId,userNumber];
+
+    var query = dbcon.query('INSERT idinfo set regId=? where userNumber=?',postData,function(err,rows){
+    	if(!err){
+	    	if (typeof rows === 'undefined'){
+	    		res.json({status :300, errorDesc : "INSERT INTO idinfo - FAIL"});
+	    	}
+	    	else{
+	    		console.log("INSERT INTO idinfo(regId) in userNumber="+userNumber+"/"+rows.affectedRows);
+	    		callback(null, {status :200, responseData:"insert regid success"});
+	    	}
+	    }
+	    else
+	    	res.json({status :300, errorDesc : err.message});
+	});
 });
 
 module.exports = router;
