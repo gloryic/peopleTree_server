@@ -336,14 +336,14 @@ PeopleTree.prototype.deleteNode = function(groupMemberId, f) {
                 if(deleteNumber != 1)
                   callback({status:500, errorDesc : "my parent is not real parent"}, null);
                 else
-                  callback(null, parentGroupMemberId, deleteNumber);//deleteNumber is 1
+                  callback(null, parentGroupMemberId, deleteNumber);//내 부모가 있다면 deleteNumber is 1
               }
               else
                 callback(err.message, null);
             });
           }
           else{
-            callback(null, parentGroupMemberId, 0);
+            callback(null, parentGroupMemberId, 0);//내 부모가 없다면 deleteNumber is 0
           }
       },
       //나의 자식들 나의 부모에게 위임하기
@@ -359,7 +359,7 @@ PeopleTree.prototype.deleteNode = function(groupMemberId, f) {
                   tree.rpush("L/"+parentGroupMemberId, childGroupid, function(err,obj){
                     console.log("count"+count);
                     if(!count--)
-                      callback(null,deleteNumber);
+                      callback(null, parentGroupMemberId, deleteNumber);
                   });
                 });
               }
@@ -367,9 +367,32 @@ PeopleTree.prototype.deleteNode = function(groupMemberId, f) {
                 callback(err.message,null);
             });
           }
+          else
+            callback(null, parentGroupMemberId, deleteNumber);
+      },
+      function (parentGroupMemberId, deleteNumber, callback) {
+          console.log('--- async.waterfall delete Node #4 ---');
+          //내 자식의 부모를 나의 부모로 한다.
+          if(deleteNumber){
+            tree.lrange('L/'+groupMemberId, 2, -1, function (err, items) {
+              if (!err){
+                console.log('item.length : '+items.length);
+                var count = items.length-1;
+                items.forEach(function (childGroupid) {
+                  tree.lset("L/"+childGroupid, 1, parentGroupMemberId, function(err,obj){
+                    console.log("count"+count);
+                    if(!count--)
+                      callback(null,deleteNumber);
+                  });
+                });
+              }
+              else
+                callback(err.message,null);
+            });
+
+          }
           else{
-            //내가 루트인데 지워지는 거니까
-            //나의 자식들 부모를 자기 자식으로 변경한다.
+            //내가 루트일때, 나의 자식들 부모를 자기 자식으로 변경한다.
             tree.lrange('L/'+groupMemberId, 2, -1, function (err, items) {
               if (!err){
                 console.log('item.length : '+items.length);
@@ -389,7 +412,7 @@ PeopleTree.prototype.deleteNode = function(groupMemberId, f) {
       },
       //나의 해시테이블 지우기
       function (parentDeleteNumber, callback) {
-          console.log('--- async.waterfall delete Node #4 ---');
+          console.log('--- async.waterfall delete Node #5 ---');
 
           tree.del("H/"+groupMemberId, function(err,deleteNumber){
 
@@ -403,7 +426,7 @@ PeopleTree.prototype.deleteNode = function(groupMemberId, f) {
       },
       //나의 트리를 위한 리스트 지우기
       function (hashDeleteNumber, callback) {
-        console.log('--- async.waterfall delete Node #5--');
+        console.log('--- async.waterfall delete Node #6--');
 
           tree.del("L/"+groupMemberId, function(err,deleteNumber){
 
@@ -417,7 +440,7 @@ PeopleTree.prototype.deleteNode = function(groupMemberId, f) {
       },
       //나의 위치를 위한 리스트 지우기
       function (listDeleteNumber, callback) {
-        console.log('--- async.waterfall delete Node #5--');
+        console.log('--- async.waterfall delete Node #7--');
 
           tree.del("G/"+groupMemberId, function(err,deleteNumber){
 
@@ -1090,22 +1113,16 @@ PeopleTree.prototype.broadcastDown = function(groupMemberId, depth, f) {
 }
 
 PeopleTree.prototype.broadcastDown = function(groupMemberId, depth, f) {
-    peopleTree.gatherChildren(groupMemberId, depth, function(err,result){
+    peopleTree.gatherChildren(groupMemberId, depth, function(err,children){
         if(!err){
-
-
-          result.forEach(function (childGroupid) {
-
+          children.forEach(function (childGroupid) {
             peopleTree.push(childGroupid, "아래로 갑니다.", "내용입니다.", 300, function(err,result){
               if(err) console.log(err.message);
             });
-
           });
-
-          f(null,result);
-
+          return f(null);
         }
-        else f(err,null);
+        else return f(err);
     });
 }
 
@@ -1114,13 +1131,13 @@ PeopleTree.prototype.gatherChildren = function(groupMemberId, depth, f) {
         global.gatherChildrenCall = 0;
         gatherChildrenCall++;
         console.log("root callNumber1 : "+ gatherChildrenCall);
-        peopleTree.gatherChildrenSub(groupMemberId, function(obj){
+        peopleTree.gatherChildrenSub(groupMemberId, depth, function(obj){
           console.log("root callNumber2 : "+ gatherChildrenCall);
           if(gatherChildrenCall==0) return f(null, gatherArr);
         });
 }
 
-PeopleTree.prototype.gatherChildrenSub = function(groupMemberId, f) {
+PeopleTree.prototype.gatherChildrenSub = function(groupMemberId, depth, f) {
 
     async.waterfall([
       function(callback) {
@@ -1137,7 +1154,9 @@ PeopleTree.prototype.gatherChildrenSub = function(groupMemberId, f) {
           items.forEach(function (childGroupid) {
             gatherArr.push(parseInt(childGroupid));
             gatherChildrenCall++;
-            peopleTree.gatherChildrenSub(childGroupid, f);
+
+            peopleTree.gatherChildrenSub(childGroupid, depth, f);
+
           });
           callback(null, f);
         });
@@ -1166,9 +1185,7 @@ PeopleTree.prototype.showTree = function(rootGroupMemberId, position, index, f) 
       },
 
       function(position, popGroupId, f, callback) {
-
         console.log('--- async.waterfall #2 ---');
-
         tree.lrange('L/'+popGroupId, 2, -1, function (err, items) {
 
           if (err) console.log("err : "+err.message);
@@ -1196,9 +1213,7 @@ PeopleTree.prototype.showTree = function(rootGroupMemberId, position, index, f) 
     function(err, f) {
       console.log('--- async.waterfall result #1 ---');
       callNumber--;
-
       console.log("result callNumber : "+ callNumber);
-
       if(callNumber==0) return f(treeJson);
     });
 }
@@ -1221,12 +1236,5 @@ PeopleTree.prototype.getChildren = function(groupMemberId, f) {
       else return f(err.message,null,null);
     });
 }
-
-/*
-deleteNode할때 처리함
-PeopleTree.prototype.saveInDataBase = function(f) {
-
-}
-*/
 
 module.exports = PeopleTree;
