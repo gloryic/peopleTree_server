@@ -23,5 +23,25 @@ router.get('/', function(req, res) {
 	});
 });
 
+router.get('/Up',function(req,res){
+
+    var groupMemberId = req.query.groupMemberId;
+
+    peopleTree.broadcastUp(groupMemberId, 2, function(err,result){
+        if(!err) res.json({status:200, responseData : {parents : result}});
+        else res.json({status:300, errorDesc : err});
+    });
+});
+
+router.get('/Down',function(req,res){
+
+    var groupMemberId = req.query.groupMemberId;
+
+    peopleTree.broadcastDown(groupMemberId, 2, function(err,result){
+        if(!err) res.json({status:200, responseData : {child : gatherArr}});
+        else res.json({status:300, errorDesc : err});
+    });
+});
+
 
 module.exports = router;

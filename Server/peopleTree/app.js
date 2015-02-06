@@ -21,6 +21,8 @@ var makeGroup = require('./routes/group/makeGroup');
 var getCurInfo = require('./routes/getinfo/getCurInfo');
 var getInfo = require('./routes/getinfo/getInfo');
 var broadcast = require('./routes/broadcast/parsePush');
+var group = require('./routes/group/group');
+
 
 var treeTest = require('./routes/location/peopleTreeTest');
 
@@ -44,6 +46,7 @@ app.use('/main', index);
 app.use('/ptree/login', ptreeLogin);
 app.use('/ptree/logout', ptreeLogout);
 
+app.use('/ptree/group', group);
 app.use('/ptree/make/edge', makeEdge);
 app.use('/ptree/make/group', makeGroup);
 app.use('/ptree/getinfo', getCurInfo);//get from redis and RDB

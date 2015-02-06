@@ -125,6 +125,7 @@ PeopleTree.prototype.isExist = function(groupMemberId, f) {
     });
 }
 
+//븉으려고 하는 노드의 부모중에 내가 있으면 안된다. 이걸 체크
 PeopleTree.prototype.isValidChange = function(groupMemberId, parentGroupMemberId, f) {
 
   var curParent = parentGroupMemberId;
@@ -335,7 +336,7 @@ PeopleTree.prototype.deleteNode = function(groupMemberId, f) {
                 if(deleteNumber != 1)
                   callback({status:500, errorDesc : "my parent is not real parent"}, null);
                 else
-                  callback(null, parentGroupMemberId, deleteNumber);
+                  callback(null, parentGroupMemberId, deleteNumber);//deleteNumber is 1
               }
               else
                 callback(err.message, null);
@@ -346,6 +347,7 @@ PeopleTree.prototype.deleteNode = function(groupMemberId, f) {
           }
       },
       //나의 자식들 나의 부모에게 위임하기
+      //deleteNumber is 0, 루트다
       function (parentGroupMemberId, deleteNumber, callback) {
           console.log('--- async.waterfall delete Node #3 ---');
           if(deleteNumber){
@@ -365,8 +367,25 @@ PeopleTree.prototype.deleteNode = function(groupMemberId, f) {
                 callback(err.message,null);
             });
           }
-          else
-            callback(null,deleteNumber);
+          else{
+            //내가 루트인데 지워지는 거니까
+            //나의 자식들 부모를 자기 자식으로 변경한다.
+            tree.lrange('L/'+groupMemberId, 2, -1, function (err, items) {
+              if (!err){
+                console.log('item.length : '+items.length);
+                var count = items.length-1;
+                items.forEach(function (childGroupid) {
+                  tree.lset("L/"+childGroupid, 1, childGroupid, function(err,obj){
+                    console.log("count"+count);
+                    if(!count--)
+                      callback(null,deleteNumber);
+                  });
+                });
+              }
+              else
+                callback(err.message,null);
+            });
+          }
       },
       //나의 해시테이블 지우기
       function (parentDeleteNumber, callback) {
@@ -987,7 +1006,7 @@ PeopleTree.prototype.push = function(groupMemberId, alert, message, stateCode, f
 
     where : {
           "deviceType": "android",
-          "groupMemberId": 26
+          "groupMemberId": parseInt(groupMemberId)
           },
 
     data : {
@@ -998,48 +1017,55 @@ PeopleTree.prototype.push = function(groupMemberId, alert, message, stateCode, f
   };
   parse.sendPush(notification, function(err, resp){
     console.log(resp);
-    if(!err) return(null,resp.result);
-    else return(err,null)
+    if(!err) return f(null,resp.result);
+    else return f(err,null)
   });
 }
-
-//TODO
-//var pushArray = [];
-//pushArray.push('regId2');
 
 PeopleTree.prototype.broadcastUp = function(groupMemberId, accumulateWarning, f) {
 //groupMemberId의 부모로 시작해서 (accumulWarning-1) 위의 부모 만큼 푸시를 준다.
 
+  var curParent = groupMemberId;
+  var pastParent = -1;
+  var valid = true;
+  var count = 0;
+  var pushArray = [];
+  var upNumber = accumulateWarning+1;
+
   async.whilst(function () {
-
-    console.log(curParent+"=="+groupMemberId);
-    if(curParent==groupMemberId)
+    console.log(curParent+"=="+pastParent);
+    if(curParent==pastParent)
       valid=false;
-
-    return curParent!=pastParent && valid;
+    return count < upNumber && valid;
   },
   function (next) {
       tree.lindex("L/"+curParent,1,function(err,parentId){
-        console.log("curParent : "+parentId);
+
+        peopleTree.push(curParent, "위로 갑니다.", "내용입니다.", 300, function(err,result){
+          if(err) console.log(err.message);
+        });
+        
+        pushArray.push(parseInt(curParent));
 
         pastParent = curParent;
         curParent = parentId;
+        console.log("curParent : "+curParent);
+
+        count++;
 
         next();
       });
   },
   function (err) {
-    return f(null,valid);
+    console.log(pushArray);
+    return f(err,pushArray);
   });
-
 }
 
 PeopleTree.prototype.broadcastDown = function(groupMemberId, depth, f) {
 //groupMemberId의 부모로 시작해서 depth 아래의 자식 모두에게 푸시를 준다.
 //자식 들을 일단 모으고 
 
-
-
   async.whilst(function () {
 
     console.log(curParent+"=="+groupMemberId);
@@ -1063,6 +1089,67 @@ PeopleTree.prototype.broadcastDown = function(groupMemberId, depth, f) {
   });
 }
 
+PeopleTree.prototype.broadcastDown = function(groupMemberId, depth, f) {
+    peopleTree.gatherChildren(groupMemberId, depth, function(err,result){
+        if(!err){
+
+
+          result.forEach(function (childGroupid) {
+
+            peopleTree.push(childGroupid, "아래로 갑니다.", "내용입니다.", 300, function(err,result){
+              if(err) console.log(err.message);
+            });
+
+          });
+
+          f(null,result);
+
+        }
+        else f(err,null);
+    });
+}
+
+PeopleTree.prototype.gatherChildren = function(groupMemberId, depth, f) {
+        global.gatherArr = [];
+        global.gatherChildrenCall = 0;
+        gatherChildrenCall++;
+        console.log("root callNumber1 : "+ gatherChildrenCall);
+        peopleTree.gatherChildrenSub(groupMemberId, function(obj){
+          console.log("root callNumber2 : "+ gatherChildrenCall);
+          if(gatherChildrenCall==0) return f(null, gatherArr);
+        });
+}
+
+PeopleTree.prototype.gatherChildrenSub = function(groupMemberId, f) {
+
+    async.waterfall([
+      function(callback) {
+        console.log('--- async.waterfall #1 ---');
+        console.log("gatherChildrenCall : "+ gatherChildrenCall);
+        callback(null, groupMemberId, f);
+      },
+
+      function(popGroupId, f, callback) {
+
+        console.log('--- async.waterfall #2 ---');
+        tree.lrange('L/'+popGroupId, 2, -1, function (err, items) {
+          console.log('item.length : '+items.length);
+          items.forEach(function (childGroupid) {
+            gatherArr.push(parseInt(childGroupid));
+            gatherChildrenCall++;
+            peopleTree.gatherChildrenSub(childGroupid, f);
+          });
+          callback(null, f);
+        });
+      }
+    ],
+    function(err, f) {
+      console.log('--- async.waterfall result #1 ---');
+      gatherChildrenCall--;
+      console.log("result gatherChildrenCall : "+ gatherChildrenCall);
+      if(gatherChildrenCall==0) return f(null,gatherArr);
+    });
+}
 
 PeopleTree.prototype.showTree = function(rootGroupMemberId, position, index, f) {
 
@@ -1112,7 +1199,26 @@ PeopleTree.prototype.showTree = function(rootGroupMemberId, position, index, f) 
 
       console.log("result callNumber : "+ callNumber);
 
-      if(callNumber==0) return f("test");
+      if(callNumber==0) return f(treeJson);
+    });
+}
+
+PeopleTree.prototype.getChildren = function(groupMemberId, f) {
+
+    var childrenArray = [];
+    var length = 0;
+
+    tree.lrange('L/'+groupMemberId, 2, -1, function (err, children) {
+
+      if(!err){ 
+        length = children.length;
+        console.log('children.length : '+length);
+        children.forEach(function (child) {
+          childrenArray.push(parseInt(child));
+        });
+        return f(null,childrenArray,length);
+      }
+      else return f(err.message,null,null);
     });
 }
 

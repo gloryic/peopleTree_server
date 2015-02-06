@@ -92,6 +92,9 @@ http://210.118.74.107:3000/ptree/test/setGeoPoint?groupMemberId=26&radius=10&poi
 #push 받기 아이디 등록하기
 POST http://210.118.74.107:3000/ptree/test/registrationId?registrationId=123123&userNumber=123123
 
+#자식의 수와 자식의 번호들을 리스트로 가져온다.
+http://210.118.74.107:3000/ptree/group/children?groupMemberId=26
+
 #################
 #URI test
 #################
