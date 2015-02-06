@@ -36,8 +36,9 @@ router.get('/Up',function(req,res){
 router.get('/Down',function(req,res){
 
     var groupMemberId = req.query.groupMemberId;
-
-    peopleTree.broadcastDown(groupMemberId, 2, function(err){
+    var depth = req.query.depth;
+    
+    peopleTree.broadcastDown(groupMemberId, depth, function(err){
         if(!err) res.json({status:200, responseData : {child : gatherArr}});
         else res.json({status:300, errorDesc : err});
     });

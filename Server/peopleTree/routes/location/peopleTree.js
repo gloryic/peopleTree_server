@@ -1151,13 +1151,15 @@ PeopleTree.prototype.gatherChildrenSub = function(groupMemberId, depth, f) {
         console.log('--- async.waterfall #2 ---');
         tree.lrange('L/'+popGroupId, 2, -1, function (err, items) {
           console.log('item.length : '+items.length);
-          items.forEach(function (childGroupid) {
-            gatherArr.push(parseInt(childGroupid));
-            gatherChildrenCall++;
+          if(depth > 0){
+            items.forEach(function (childGroupid) {
+              gatherArr.push(parseInt(childGroupid));
+              gatherChildrenCall++;
 
-            peopleTree.gatherChildrenSub(childGroupid, depth, f);
+              peopleTree.gatherChildrenSub(childGroupid, depth-1, f);
 
-          });
+            });
+          }
           callback(null, f);
         });
       }
