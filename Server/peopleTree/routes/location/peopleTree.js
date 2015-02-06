@@ -463,14 +463,40 @@ PeopleTree.prototype.changeManageMode = function(groupMemberId, manageMode, f) {
 PeopleTree.prototype.changeEdgeStatus = function(groupMemberId, edgeStatus, f) {
   tree.hset('H/'+groupMemberId, 'edgeStatus', edgeStatus, function(err, updateNumber){
     if(!err){
-      if(updateNumber==1)
-        return f(null, 1);
-      else
-        return f(null, 0);
+      return f(null, 0);
     }
     else
       return f(err.message, null);
   });
+}
+
+PeopleTree.prototype.accumulateWarning = function(groupMemberId, resetFlag, f) {
+
+  //resetFlag가 true 이면 accumulateWarning 0으로 리셋
+  if(resetFlag){
+    tree.hset('H/'+groupMemberId, 'accumulateWarning', 0, function(err, updateNumber){
+      if(!err){
+        return f(null, 0);
+      }
+      else
+        return f(err.message, null);
+    });
+  }
+  else{
+    tree.hget('H/'+groupMemberId, 'accumulateWarning', function(err, accumulateWarning){
+      if(!err){
+        tree.hset('H/'+groupMemberId, 'accumulateWarning', parseInt(accumulateWarning)+1, function(err, updateNumber){
+          if(!err){
+              return f(null, parseInt(accumulateWarning)+1);// return 0
+          }
+          else
+            return f(err.message, null);
+        });
+      }
+      else
+        return f(err.message, null);
+    });
+  }
 }
 
 PeopleTree.prototype.changeRadius = function(groupMemberId, changeRadius, f) {
@@ -505,7 +531,6 @@ PeopleTree.prototype.setGeoPoint = function(groupMemberId, radius, points, f) {
 // "G/" 지우고 다시 만들자.
 // 있다면->지운다. -> 다시 만들기
 // "G/"의 길이는 1+2*points.length
-//TODO
 
   var length = 0;
   if(points) length = points.length;
@@ -736,25 +761,43 @@ PeopleTree.prototype.checkTrackingModeAndAreaMode = function(groupMemberId, pare
         //validation==false 면 edgeStatus를 300으로 변경
         if(!validation){
           peopleTree.changeEdgeStatus(groupMemberId, 300, function(err, updateNumber){
-            if(!err){
-              if(updateNumber==0) callback(null, {radius: radius, distance: distance, edgeStatus: "change 300", validation : validation});
-              else callback({state:300,errorDesc:"not exist edgeStatus"},null);
-            }
+            if(!err)
+              callback(null, radius, distance);
             else
               callback(err.message, null);
           });
         }
         else{
           peopleTree.changeEdgeStatus(groupMemberId, 200, function(err, updateNumber){
-            if(!err){
-              if(updateNumber==0) callback(null, {radius: radius, distance: distance, edgeStatus: "change 200", validation : validation});
-              else callback({state:300,errorDesc:"not exist edgeStatus"},null);
-            }
+            if(!err)
+              callback(null, radius, distance);
             else
               callback(err.message, null);
           });
         }
-      }
+      },
+
+      function(radius, distance, callback){
+        console.log('--- async.waterfall checkTrackingModeAndAreaMode Node #5 ---');
+        if(!validation){
+          //벗어남 flag가 false 1추가
+          peopleTree.accumulateWarning(groupMemberId, false, function(err,accumulateWarning){
+            if(!err)
+              callback(null, {radius: radius, distance: distance, edgeStatus: "change 300", validation : validation, accumulateWarning : accumulateWarning});
+            else
+              callback(err.message, null);
+          });
+        }
+        else{
+          //true면 0으로 리셋
+          peopleTree.accumulateWarning(groupMemberId, true, function(err,updateNumber){
+            if(!err)
+              callback(null, {radius: radius, distance: distance, edgeStatus: "change 200", validation : validation, accumulateWarning:accumulateWarning});
+            else
+              callback(err.message, null);
+          });
+        }
+      },
   ],
 
   function(err, results) {
@@ -888,20 +931,38 @@ PeopleTree.prototype.checkGeofencingMode = function(groupMemberId, parentGroupMe
         //validation==false 면 edgeStatus를 300으로 변경
         if(!validation){
           peopleTree.changeEdgeStatus(groupMemberId, 300, function(err, updateNumber){
-            if(!err){
-              if(updateNumber==0) callback(null, {edgeStatus: "change 300", validation : validation});
-              else callback({state:300,errorDesc:"not exist edgeStatus"},null);
-            }
+            if(!err)
+              callback(null, validation);
             else
               callback(err.message, null);
           });
         }
         else{
           peopleTree.changeEdgeStatus(groupMemberId, 200, function(err, updateNumber){
-            if(!err){
-              if(updateNumber==0) callback(null, {edgeStatus: "change 200", validation : validation});
-               else callback({state:300,errorDesc:"not exist edgeStatus"},null);
-            }
+            if(!err)
+              callback(null, validation);
+            else
+              callback(err.message, null);
+          });
+        }
+      },
+
+      function(validation, callback){
+        console.log('--- async.waterfall checkTrackingModeAndAreaMode Node #5 ---');
+        if(!validation){
+          //벗어남 flag가 false 1추가
+          peopleTree.accumulateWarning(groupMemberId, false, function(err,accumulateWarning){
+            if(!err)
+              callback(null, {edgeStatus: "change 300", validation : validation, accumulateWarning : accumulateWarning});
+            else
+              callback(err.message, null);
+          });
+        }
+        else{
+          //true면 0으로 리셋
+          peopleTree.accumulateWarning(groupMemberId, true, function(err,updateNumber){
+            if(!err)
+              callback(null, {edgeStatus: "change 200", validation : validation, accumulateWarning : accumulateWarning});
             else
               callback(err.message, null);
           });
@@ -920,8 +981,86 @@ PeopleTree.prototype.checkGeofencingMode = function(groupMemberId, parentGroupMe
   });
 }
 
-PeopleTree.prototype.broadcast = function(groupMemberId, depth, f) {
+PeopleTree.prototype.push = function(groupMemberId, alert, message, stateCode, f) {
 
+  var notification = {
+
+    where : {
+          "deviceType": "android",
+          "groupMemberId": 26
+          },
+
+    data : {
+          "alert": alert,
+          "message": message,
+          "stateCode":stateCode
+         }
+  };
+  parse.sendPush(notification, function(err, resp){
+    console.log(resp);
+    if(!err) return(null,resp.result);
+    else return(err,null)
+  });
+}
+
+//TODO
+//var pushArray = [];
+//pushArray.push('regId2');
+
+PeopleTree.prototype.broadcastUp = function(groupMemberId, accumulateWarning, f) {
+//groupMemberId의 부모로 시작해서 (accumulWarning-1) 위의 부모 만큼 푸시를 준다.
+
+  async.whilst(function () {
+
+    console.log(curParent+"=="+groupMemberId);
+    if(curParent==groupMemberId)
+      valid=false;
+
+    return curParent!=pastParent && valid;
+  },
+  function (next) {
+      tree.lindex("L/"+curParent,1,function(err,parentId){
+        console.log("curParent : "+parentId);
+
+        pastParent = curParent;
+        curParent = parentId;
+
+        next();
+      });
+  },
+  function (err) {
+    return f(null,valid);
+  });
+
+}
+
+PeopleTree.prototype.broadcastDown = function(groupMemberId, depth, f) {
+//groupMemberId의 부모로 시작해서 depth 아래의 자식 모두에게 푸시를 준다.
+//자식 들을 일단 모으고 
+
+
+
+  async.whilst(function () {
+
+    console.log(curParent+"=="+groupMemberId);
+    if(curParent==groupMemberId)
+      valid=false;
+
+    return curParent!=pastParent && valid;
+  },
+  function (next) {
+      tree.lindex("L/"+curParent,1,function(err,parentId){
+        console.log("curParent : "+parentId);
+
+        pastParent = curParent;
+        curParent = parentId;
+
+        next();
+      });
+  },
+  function (err) {
+    return f(null,valid);
+  });
 }
 
 

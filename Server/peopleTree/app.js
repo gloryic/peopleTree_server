@@ -7,6 +7,7 @@ var bodyParser = require('body-parser');
 var http = require('http');
 var mysql = require('mysql');
 var redis = require('redis');
+var Parse = require('node-parse-api').Parse;
 
 var PeopleTree = require('./routes/location/peopleTree');
 
@@ -19,7 +20,7 @@ var makeGroup = require('./routes/group/makeGroup');
 
 var getCurInfo = require('./routes/getinfo/getCurInfo');
 var getInfo = require('./routes/getinfo/getInfo');
-var broadcast = require('./routes/broadcast/gcmPush');
+var broadcast = require('./routes/broadcast/parsePush');
 
 var treeTest = require('./routes/location/peopleTreeTest');
 
@@ -49,7 +50,7 @@ app.use('/ptree/getinfo', getCurInfo);//get from redis and RDB
 app.use('/ptree/_getinfo', getInfo);//get from RDB
 
 app.use('/ptree/test', treeTest);
-app.use('/ptree/test/push', broadcast);
+app.use('/ptree/test/broadcast', broadcast);
 
 /// catch 404 and forwarding to error handler
 app.use(function(req, res, next) {
@@ -65,6 +66,11 @@ var dbConfig = {
   password:'1234',
   database:'peopletree'
 };
+
+var APP_ID = 'sDGocHwgCiClL6qWbc2sOZzDbHtg6JCWWmhGZWIj';
+var MASTER_KEY = 'wo7Pvg1UU4eHjkgFEhxO9VfoY9klIEbt0bKF7gGO';
+global.parse = new Parse(APP_ID, MASTER_KEY);
+
 
 global.dbcon = mysql.createConnection(dbConfig);
 

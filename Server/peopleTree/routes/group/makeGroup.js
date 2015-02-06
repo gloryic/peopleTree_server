@@ -24,16 +24,30 @@ router.get('/',function(req,res){
     if(userPhoneNumber && userId && password && userName && groupName){
 
 	    var idInfoData = [userPhoneNumber,userId,password,userName];
+	    var checkData = [userId,userPhoneNumber];
 	    console.log("makegroup parameter : " + idInfoData+"/"+groupName);
 
 		async.waterfall([
 
 		  function(callback) {
-		    console.log('--- async.waterfall #1 ---');
+		    console.log('--- async.waterfall joinin #1 ---');
+		    var query = dbcon.query('SELECT 1 FROM idinfo WHERE userId=? AND userPhoneNumber=?',checkData,function(err,rows){
+	        	console.log("rows.length : "+rows.length);
+		    	if (rows.length == 1){
+		    		res.json({status:300, errorDesc : "joinin FAIL - already join in member"});
+		    	}
+		    	else{
+		    		callback(null);
+		    	}
+	    	});
+		  },
+
+		  function(callback) {
+		    console.log('--- async.waterfall joinin #2 ---');
 		    var query = dbcon.query('INSERT INTO idinfo(userPhoneNumber,userId,password,userName) VALUES(?,?,?,?)',idInfoData,function(err,rows){
 	        	
-		    	if (typeof rows === 'undefined'){
-		    		res.json({status :300, errorDesc : "INSERT INTO idinfo - FAIL"});
+		    	if (err){
+		    		res.json({status :300, errorDesc : err.message});
 		    	}
 		    	else{
 		    		console.log("INSERT INTO idinfo : "+rows.affectedRows);
@@ -43,7 +57,7 @@ router.get('/',function(req,res){
 		  },
 
 		  function(userId, callback) {
-		    console.log('--- async.waterfall #2 ---');
+		    console.log('--- async.waterfall joinin #3 ---');
 		    var query = dbcon.query('SELECT userNumber FROM idinfo WHERE userId=?',userId,function(err,rows){
 
 	        	if (rows.length == 0){
@@ -58,15 +72,15 @@ router.get('/',function(req,res){
 		  },
 
 		  function(userNumber, callback) {
-		    console.log('--- async.waterfall #3 ---');
+		    console.log('--- async.waterfall joinin #4 ---');
 	        var groupRoot = userNumber
 	        var groupData = [groupRoot,groupName];
     		console.log("INSERT INTO group parameter : " + groupData);
 	        
 	        var query = dbcon.query('INSERT INTO grouplist(groupRoot,groupName) VALUES(?,?)',groupData,function(err,rows){
 		        
-		        if (typeof rows === 'undefined'){
-		    		res.json({status: 300, errorDesc : "INSERT INTO grouplist - FAIL"});
+		        if (err){
+		    		res.json({status :300, errorDesc : err.message});
 		    	}
 		    	else{
 			        console.log("INSERT INTO grouplist : "+rows.affectedRows);
@@ -76,7 +90,7 @@ router.get('/',function(req,res){
 		  },
 
 		  function(userNumber, callback) {
-		    console.log('--- async.waterfall #4 ---');
+		    console.log('--- async.waterfall joinin #5 ---');
 		    var query = dbcon.query('SELECT groupId FROM grouplist WHERE groupRoot=?',userNumber,function(err,rows){
 
 	        	if (rows.length == 0){
@@ -90,7 +104,7 @@ router.get('/',function(req,res){
 		  },
 
 		  function(groupId, userNumber, callback) {
-		    console.log('--- async.waterfall #5 ---');
+		    console.log('--- async.waterfall joinin #6 ---');
 	        var groupMemberId = userNumber;
 	        var parentGroupMemberId = userNumber;// 첫 그룹은 자기 자신이 부모다
 
@@ -99,56 +113,47 @@ router.get('/',function(req,res){
 	        //step 5. groupmember에 저장 한다 
 	        var query = dbcon.query('INSERT INTO groupmember(groupMemberId,groupId,userNumber,parentGroupMemberId,userId) VALUES(?,?,?,?,?)',groupMemberData,function(err,rows){
 
-		        if (typeof rows === 'undefined'){
-		    		res.json({status:300, errorDesc : "INSERT INTO groupmember - FAIL"});
+		        if (err){
+		    		res.json({status :300, errorDesc : err.message});
 		    	}
 		    	else{
 			        console.log("INSERT INTO groupmember : "+rows.affectedRows);
-			        callback(null, 'done');
+			        callback(null);
 		    	}
 		    });
-	      }
+	      },
+
+		  function(callback) {
+		    console.log('--- async.waterfall joinin #7 ---');
+		    var query = dbcon.query('SELECT userNumber FROM idinfo WHERE userId=? AND userPhoneNumber=?',checkData, function(err,rows){
+	        	console.log("rows.length : "+rows.length);
+
+	        	if(!err){
+			    	if (rows.length == 0){
+			    		res.json({status:300, errorDesc : "SELECT FROM idinfo - joinin FAIL"});
+			    	}
+			    	else{
+			    		console.log("SELECT FROM idinfo : "+ rows[0].userNumber);
+			    		callback(null, rows[0].userNumber);
+			    	}
+			    }
+			    else res.json({status:300, errorDesc : err.message});
+	    	});
+		  },
 		],
 
-		function(err, results) {
+		function(err, userNumber) {
 		  console.log('--- async.waterfall result #1 ---');
 		  console.log(arguments);
 		  if(!err)
-		  	res.json({status:200, responseData :"make group success"});
+		  	res.json({status:200, responseData : {userNumber:userNumber, desc:"make group success"}});
 		  else
-		  	res.json({status:500, responseData :"make group failed"});
+		  	res.json({status:500, errorDesc :"make group failed"});
 		});
 	}
 	else{
 		res.json({status:300, errorDesc : "parameter Error"});
 	}
-});
-
-/*
-#regId등록하기 (가입하기 step.2)
-#path : POST /ptree/make/group
-#req : int ownPhoneNumber
-#res : int status, int groupId
-*/
-router.post('/registrationId',function(req,res){
-
-    var registrationId=req.body.registrationIds;
-    var userNumber=req.body.userNumber;	
-    var postData=[registrationId,userNumber];
-
-    var query = dbcon.query('INSERT idinfo set regId=? where userNumber=?',postData,function(err,rows){
-    	if(!err){
-	    	if (typeof rows === 'undefined'){
-	    		res.json({status :300, errorDesc : "INSERT INTO idinfo - FAIL"});
-	    	}
-	    	else{
-	    		console.log("INSERT INTO idinfo(regId) in userNumber="+userNumber+"/"+rows.affectedRows);
-	    		callback(null, {status :200, responseData:"insert regid success"});
-	    	}
-	    }
-	    else
-	    	res.json({status :300, errorDesc : err.message});
-	});
 });
 
 module.exports = router;

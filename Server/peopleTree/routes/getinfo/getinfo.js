@@ -60,7 +60,8 @@ router.get('/group/member',function(req,res){
 												                                "latitude" : null,
 												                                "longitude" : null,
 												                                "managingTotalNumber" : 0,
-												                                "managingNumber" : 0
+												                                "managingNumber" : 0,
+												                                "accumulateWarning" : 0
 												                            }
 									});
 			                }

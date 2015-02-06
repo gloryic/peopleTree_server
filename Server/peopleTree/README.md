@@ -89,6 +89,9 @@ http://210.118.74.107:3000/ptree/test/checkGeofencingMode?groupMemberId=26&paren
 #points의 길이가 1이면 220 - 지역 모드에서 쓰인다. n이면 지오펜싱 모드
 http://210.118.74.107:3000/ptree/test/setGeoPoint?groupMemberId=26&radius=10&points=[{lat:0,lng:0},{lat:0,lng:0},...]
 
+#push 받기 아이디 등록하기
+POST http://210.118.74.107:3000/ptree/test/registrationId?registrationId=123123&userNumber=123123
+
 #################
 #URI test
 #################
@@ -98,6 +101,9 @@ http://210.118.74.107:3000/ptree/getinfo/group/member?userNumber=26 //DataBase�
 
 #회원가입 URL - idinfo, grouplist, groupmember에 레코드가 삽입되며, 서버 메모리에 노드로서 생성된다.
 http://210.118.74.107:3000/ptree/make/group?userPhoneNumber=01011112222&userId=jakimg&password=123&userName=abc&groupName=first111
+#res
+#{"status":200,"responseData":{"userNumber":42,"desc":"make group success"}}
+#{"status":300,"errorDesc:"blahbah"}
 
 #로그인 하기
 http://210.118.74.107:3000/ptree/login?userId=jakimg123&password=123

@@ -34,7 +34,6 @@ router.get('/group/member',function(req,res){
             if(rows.length == 1){
             	//로그인 상태라면 메모리에서 값을 읽어온다.	
 				peopleTree.getItems(userNumber,function(err,obj){
-
 					if(!err){
 						if(obj){
 				                    res.json({status:200, responseData :  {
@@ -51,7 +50,8 @@ router.get('/group/member',function(req,res){
 												                                "latitude" : parseFloat(obj.latitude),
 												                                "longitude" : parseFloat(obj.longitude),
 												                                "managingTotalNumber" : parseInt(obj.managingTotalNumber),
-												                                "managingNumber" : parseInt(obj.managingNumber)
+												                                "managingNumber" : parseInt(obj.managingNumber),
+												                                "accumulateWarning" : parseInt(obj.accumulateWarning)
 												                            }
 											});
 						}
@@ -59,7 +59,7 @@ router.get('/group/member',function(req,res){
 							res.json({status:404, responseData : "not login user"});
 					}
 					else
-						res.json({status:500, responseData : err.message});								
+						res.json({status:500, responseData : err.message});
 				});
             }
             else{
@@ -67,6 +67,7 @@ router.get('/group/member',function(req,res){
 		    }
         }
     });
+	
 });
 
 module.exports = router;
