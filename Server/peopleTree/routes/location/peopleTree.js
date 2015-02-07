@@ -320,14 +320,22 @@ PeopleTree.prototype.affectAllParents = function(groupMemberId, number, isStray,
           pushArray.push(parseInt(curParent));
 
           console.log("curParent : "+curParent);
-          tree.hincrby("H/"+curParent, "managingNumber", parseInt(number), function(err,obj){
-             if(err) console.log(err.message);
+          //TODO
+          tree.hget("H/"+curParent,'managingNumber',function(err,managingNumber){
+              if(managingNumber > 0 || number >= 0){
+                tree.hincrby("H/"+curParent, "managingNumber", number, function(err,obj){
+                   if(err) console.log(err.message);
+                });
+              }
           });
-
           if(!isStray){
-            console.log("isStray : "+isStray);
-            tree.hincrby("H/"+curParent, "managingTotalNumber", parseInt(number), function(err,obj){
-               if(err) console.log(err.message);
+            tree.hget("H/"+curParent,'managingTotalNumber',function(err,managingTotalNumber){
+                if(managingTotalNumber > 0 || number >= 0){
+                  console.log("isStray : "+isStray);
+                  tree.hincrby("H/"+curParent, "managingTotalNumber", number, function(err,obj){
+                     if(err) console.log(err.message);
+                  });
+                }
             });
           }
         }
