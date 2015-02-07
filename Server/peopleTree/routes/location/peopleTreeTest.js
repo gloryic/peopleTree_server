@@ -93,11 +93,11 @@ router.get('/showTree', function(req, res) {
 				});
 			}
 			else{
-				res.json({state:200,errorDesc:"not exist groupMemberId"});
+				res.json({status:200,errorDesc:"not exist groupMemberId"});
 			}
 		}
 		else{
-			res.json({state:500,errorDesc:"redis error"});
+			res.json({status:500,errorDesc:"redis error"});
 		}
 	});
 });
@@ -243,5 +243,26 @@ router.get('/setGeoPoint', function(req, res) {
 		}
 	});
 });
+
+
+
+router.get('/affectAllParents', function(req, res) {
+
+	var groupMemberId = req.query.groupMemberId;
+	var number = req.query.number;
+	var isStray = false;
+
+	peopleTree.affectAllParents(groupMemberId, number, isStray, function(err,obj){
+
+		if(!err){
+			console.log("/affectAllParents : "+ JSON.stringify(obj));
+			res.json(obj);
+		}
+		else{
+			res.json(err);
+		}
+	});
+});
+
 
 module.exports = router;

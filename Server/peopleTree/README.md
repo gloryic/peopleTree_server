@@ -5,7 +5,7 @@
 groupMemberId는 userNumber
 사용자 가입시 아디이는 userId 이다.
 
-manageMode는 100은 관리대상 ,200은 관리자 210은 트레킹 모드, 220 지역모드 230은 지오펜스모드
+#manageMode는 100은 관리대상 ,200은 관리자 210은 트레킹 모드, 220 지역모드 230은 지오펜스모드
 
 state
 200 //정상
@@ -95,6 +95,12 @@ POST http://210.118.74.107:3000/ptree/test/registrationId?registrationId=123123&
 #자식의 수와 자식의 번호들을 리스트로 가져온다.
 http://210.118.74.107:3000/ptree/group/children?groupMemberId=26
 
+#깊이에 있는 자식에게만 푸시를 보낸다.
+http://210.118.74.107:3000/ptree/test/broadcast/Down?groupMemberId=26&depth=1
+
+#위로 푸시알림을 보낸다 누적 경고의 횟수만큼 올라간다.(나포함)
+http://210.118.74.107:3000/ptree/test/broadcast/Up?groupMemberId=26&accumulateWarning=1
+
 #################
 #URI test
 #################
@@ -120,19 +126,23 @@ http://210.118.74.107:3000/ptree/login?userId=jakimg123&password=123
 http://210.118.74.107:3000/ptree/make/group?userPhoneNumber=01011113333&userId=jakimg1&password=123&userName=grout&groupName=first222
 
 ## "H/그룹아이디"로 해쉬태이블 생성 회원 정보 관리
-
 {
 	"userId":"glory1",
 	"userNumber":1,
 	"groupMemberId":11,
 	"parentGroupMemberId":1,
-	"userName":"영광","groupId":1,
+	"userName":"영광",
+	"groupId":1,
 	"userPhoneNumber":1028791924,
-	"edgeStatus":200,
-	"longitude":"null",
-	"latitude":"null"
-        "managingTotalNumber":0,
-        "managingNumber":0
+	"edgeStatus":200, // 200 - 정상, 300 - 비정상
+	"edgeType" : 100, // 100 - 정보 보고 관계, 200 - 위치 관리 관계 
+	"manageMode":200, // 200 - nothing 모드, 210 - 트레킹 모드, 220 - 지역모드, 230 - 지오펜스모드
+    "managedLocationRadius":0,
+    "latitude":"null",
+    "longitude":"null",
+	"managingTotalNumber":0,
+    "managingNumber":0,
+    "accumulateWarning":0
 }
 
 ## "L/그룹멤버아이디" 로 리스트 생성 트리 구조관리
@@ -145,6 +155,7 @@ http://210.118.74.107:3000/ptree/make/group?userPhoneNumber=01011113333&userId=j
 210 : 트레킹 모드라면 길이는 1 , 0번 만 쓴다.
 220 : 지역 모드라면 길이는 3, 한포인트만 쓴다.
 230 : 지오펜싱 모드는 다각형의 꼭지점 n, 1+2n 수만큼 쓴다.
+
 0번은 반경
 1번은 위도1
 2번은 경도1
@@ -152,9 +163,61 @@ http://210.118.74.107:3000/ptree/make/group?userPhoneNumber=01011113333&userId=j
 4번은 경도2
 ...
 
+#G/groupMemberId 리스트 구조
+[radius, lat1, lng1, lat2, lng2, ...]
+
+#L/groupMemberId 리스트 구조
 [groupMemberId, parentGroupMemberId, childGroupMemberId, ...]
 
 totalLen - 2 == 전체 자식들의 수
+## 공지 메세지와 상태변화 메세지 이탈자 발생 메세지
+공지메세지 100
+상태변화 메세지 210//gps끄기, 220//wifi 끄기, 230//배터리 부족
+이탈자 발생 메세지 300
+관계 요청 메세지 410, 420, 510, 520 
+//410 - 내 밑으로 들어와라, edgeType(100), 420 - 내 밑으로 들어와라 edgeType(200)
+//510 - 저를 받아주세요, edgeType(100), 520 - 저를 받아주세요 edgeType(200)
+
+#공지메세지 100
+    data : {
+              "userName": userName,//보낸이 이름을 제목으로
+              "from" : from,
+              "to" : to,
+              "message": message,
+              "stateCode":100,
+              "action":"com.ssm.peopleTree.message"
+           }
+
+#상태변화 메세지 2~~
+    data : {
+              "userName": userName,//보낸이 이름을 제목으로
+              "from" : from,
+              "to" : to,
+              "message": message,
+              "stateCode":100,
+              "action":"com.ssm.peopleTree.message"
+           }
+
+#이탈자 발생 메세지 300
+    data : {
+              "userName": userName,//보낸이 이름을 제목으로
+              "from" : from,
+              "to" : to,
+              "message": message,
+              "stateCode":100,
+              "action":"com.ssm.peopleTree.message"
+           }
+#관계 요청 메세지 410, 420
+    data : {
+              "userName": userName,//보낸이 이름을 제목으로
+              "from" : from,
+              "to" : to,
+              "message": message,
+              "stateCode":100,
+              "action":"com.ssm.peopleTree.message"
+           }
+
+
 
 
 2. 로그인이 되면서 메모리에 노드가 생성된다.

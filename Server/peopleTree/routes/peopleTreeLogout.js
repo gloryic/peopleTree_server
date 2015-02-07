@@ -28,7 +28,7 @@ router.get('/', function(req, res) {
 						callback(null, logoutData);
 					}
 					else{
-						callback({state:400, errDesc : "not loging User"}, null);
+						callback({status:400, errDesc : "not loging User"}, null);
 					}
 		      	}
 		        else
@@ -65,7 +65,7 @@ router.get('/', function(req, res) {
 				if(!err)
 					callback(null, 'logout-Success');
 				else
-					callback(null, 'logout-NotSuccess');
+					callback(null, err);
 			});
 		  }
 		],

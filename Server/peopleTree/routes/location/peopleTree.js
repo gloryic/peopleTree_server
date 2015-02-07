@@ -65,7 +65,6 @@ PeopleTree.prototype.insertNode = function(userNumber, f) {
         function (groupMemberId, flag, callback) {
           console.log('--- async.waterfall insertNode #4 ---');
           if(flag){
-            //tree.rpush("G/"+groupMemberId, items.manageMode);//0번 나의 관리모드
             tree.rpush("G/"+groupMemberId, items.managedLocationRadius, function(err,result){
               if(!err) callback(null, groupMemberId, 1);
               else callback(err.message,null);
@@ -112,10 +111,10 @@ PeopleTree.prototype.getItems = function(groupMemberId, f) {
 }
 
 PeopleTree.prototype.isExist = function(groupMemberId, f) {
-    tree.hgetall("H/"+groupMemberId, function(err,obj){
-        console.log("isExist "+groupMemberId+" : " + JSON.stringify(obj));
+    tree.exists("H/"+groupMemberId, function(err,result){
+        console.log("isExist "+groupMemberId+" : " + result);
         if(!err){
-          if(obj!=null)
+          if(result)
             return f(null,true);
           else
             return f(null,false);
@@ -171,10 +170,10 @@ PeopleTree.prototype.changeParent = function(groupMemberId, parentGroupMemberId,
                   callback(null,myData);
                 }
                 else
-                  callback({state:404, errorDesc:"not found that Data about groupMemberId"},null);
+                  callback({status:404, errorDesc:"not found that Data about groupMemberId"},null);
               }
               else
-                callback({state:300, errorDesc:error.message},null);
+                callback({status:300, errorDesc:error.message},null);
             });
         },
 
@@ -187,21 +186,22 @@ PeopleTree.prototype.changeParent = function(groupMemberId, parentGroupMemberId,
                 if(parentData!=null){
 
                   if(myData.parentGroupMemberId == parentData.groupMemberId) 
-                    callback({state:303, errorDesc:"already setting that parentId "},null);//이미 변경 하려는 부모가 내 부모
+                    callback({status:303, errorDesc:"already setting that parentId "},null);//이미 변경 하려는 부모가 내 부모
                   else
                     callback(null,myData,parentData);
                 }
                 else
-                  return callback({state:404, errorDesc:"not found that Data about ParentGroupMemberId"},null);
+                  return callback({status:404, errorDesc:"not found that Data about ParentGroupMemberId"},null);
             }
             else
-              return callback({state:300, errorDesc:error.message},null);
+              return callback({status:300, errorDesc:error.message},null);
           });
         },
 
         function (myData, parentData, callback) {
           console.log('--- async.waterfall changeParent #3 ---');
            //원래 부모에서 나를 제거한다.
+           console.log("groupMemberId != myData.parentGroupMemberId / "+ groupMemberId +" != "+ myData.parentGroupMemberId);
           if(groupMemberId != myData.parentGroupMemberId){
             tree.lrem("L/"+myData.parentGroupMemberId, -1, groupMemberId, function(err, deleteNumber){
               if(!err)
@@ -215,29 +215,28 @@ PeopleTree.prototype.changeParent = function(groupMemberId, parentGroupMemberId,
         },
 
         function (myData, parentData, callback) {
+          //TODO
           console.log('--- async.waterfall changeParent #4 ---');
+          //부모가 바뀌기전 부모의 관리 인원 정보를 업데이트.
+          if(groupMemberId != myData.parentGroupMemberId){
+            peopleTree.affectAllParents(groupMemberId, -1, false, function(err,result){
+              if(!err)
+                callback(null,myData, parentData);
+              else
+                callback(err.message,null);
+            });
+          }
+          else
+            callback(null,myData,parentData);
+        },
+
+        function (myData, parentData, callback) {
+          console.log('--- async.waterfall changeParent #5 ---');
           //1. 나의 부모를 변경
           //2. 나의 그룹 아이디를 변경
           var items = {groupId:parentData.groupId, parentGroupMemberId:parentGroupMemberId};
           console.log("myChangeParent : "+JSON.stringify(items));
           tree.hmset("H/"+groupMemberId, items, function(err,obj){
-            if(!err)
-              callback(null,myData, parentData);
-            else
-              callback(err.message,null);
-          });
-        },
-
-        function (myData, parentData, callback) {
-          console.log('--- async.waterfall changeParent #5 ---');
-          //부모의 관리 인원 정보를 업데이트. 내가 관리 하고 있는 인원 + 1(나)
-          var parentitems = {
-                              managingTotalNumber: parseInt(parentData.managingTotalNumber,10)+parseInt(myData.managingTotalNumber,10)+1, 
-                              managingNumber:parseInt(parentData.managingTotalNumber,10)+parseInt(myData.managingTotalNumber,10)+1
-                            };
-          console.log("parentChangeParent : "+JSON.stringify(parentitems));
-
-          tree.hmset("H/"+parentGroupMemberId, parentitems,function(err,obj){
             if(!err)
               callback(null);
             else
@@ -246,7 +245,7 @@ PeopleTree.prototype.changeParent = function(groupMemberId, parentGroupMemberId,
         },
 
         function (callback) {
-          console.log('--- async.waterfall changeParent #6 ---');
+          console.log('--- async.waterfall changeParent #7 ---');
           //리스트에서 나의 부모를 변경
           tree.lset("L/"+groupMemberId,1,parentGroupMemberId,function(err,obj){
             if(!err)
@@ -257,11 +256,23 @@ PeopleTree.prototype.changeParent = function(groupMemberId, parentGroupMemberId,
         },
 
         function (callback) {
-          console.log('--- async.waterfall changeParent #7 ---');
+          //TODO
+          console.log('--- async.waterfall changeParent #6 ---');
+          //부모가 변경되고 부모의 관리 인원 정보를 업데이트.
+          peopleTree.affectAllParents(groupMemberId, 1, false, function(err,result){
+            if(!err)
+              callback(null);
+            else
+              callback(err.message,null);
+          });
+        },
+
+        function (callback) {
+          console.log('--- async.waterfall changeParent #8 ---');
           //리스트에서 부모의 자식에게 나를 추가한다.
           tree.rpush("L/"+parentGroupMemberId,groupMemberId,function(err,obj){
             if(!err)
-              callback(null,{state:200, responseData : "success change parent"});
+              callback(null,{status:200, responseData : "success change parent"});
             else
               callback(err.message,null);
           });
@@ -278,7 +289,54 @@ PeopleTree.prototype.changeParent = function(groupMemberId, parentGroupMemberId,
 
     }
     else
-      return f({state:300, errorDesc:"not allow this change"},null)
+      return f({status:300, errorDesc:"not allow this change"},null)
+  });
+}
+
+PeopleTree.prototype.affectAllParents = function(groupMemberId, number, isStray, f) {
+
+  //부모의 관리 인원 정보를 업데이트. 내가 관리 하고 있는 인원 + 1(나)
+  //groupMemberId의 부모로 시작해서 (accumulWarning-1) 위의 부모 만큼 푸시를 준다.
+
+  var curParent = groupMemberId;
+  var pastParent = -1;
+  var valid = true;
+  var pushArray = [];
+
+  async.whilst(function () {
+    console.log(curParent+"=="+pastParent);
+    if(curParent==pastParent)
+      valid=false;
+
+    return valid;
+  },
+  function (next) {
+      tree.lindex("L/"+curParent,1,function(err,parentId){
+
+        pastParent = curParent;
+        curParent = parentId;
+
+        if(curParent!=pastParent){
+          pushArray.push(parseInt(curParent));
+
+          console.log("curParent : "+curParent);
+          tree.hincrby("H/"+curParent, "managingNumber", parseInt(number), function(err,obj){
+             if(err) console.log(err.message);
+          });
+
+          if(!isStray){
+            console.log("isStray : "+isStray);
+            tree.hincrby("H/"+curParent, "managingTotalNumber", parseInt(number), function(err,obj){
+               if(err) console.log(err.message);
+            });
+          }
+        }
+        next();
+      });
+  },
+  function (err) {
+    console.log(pushArray.length);
+    return f(err,pushArray);
   });
 }
 
@@ -305,6 +363,7 @@ PeopleTree.prototype.setManageNumber = function(groupMemberId, managingTotalNumb
 PeopleTree.prototype.deleteNode = function(groupMemberId, f) {
 
   async.waterfall([
+      
       //부모 아이디 가져오기
       function (callback) {
           console.log('--- async.waterfall delete Node #1 ---');
@@ -353,8 +412,10 @@ PeopleTree.prototype.deleteNode = function(groupMemberId, f) {
           if(deleteNumber){
             tree.lrange('L/'+groupMemberId, 2, -1, function (err, items) {
               if (!err){
-                console.log('item.length : '+items.length);
-                var count = items.length-1;
+                var length = items.length;
+                console.log('item.length : '+length);
+                var count = length-1;
+
                 items.forEach(function (childGroupid) {
                   tree.rpush("L/"+parentGroupMemberId, childGroupid, function(err,obj){
                     console.log("count"+count);
@@ -362,6 +423,7 @@ PeopleTree.prototype.deleteNode = function(groupMemberId, f) {
                       callback(null, parentGroupMemberId, deleteNumber);
                   });
                 });
+                if(!length) callback(null,parentGroupMemberId, deleteNumber);
               }
               else
                 callback(err.message,null);
@@ -376,8 +438,10 @@ PeopleTree.prototype.deleteNode = function(groupMemberId, f) {
           if(deleteNumber){
             tree.lrange('L/'+groupMemberId, 2, -1, function (err, items) {
               if (!err){
-                console.log('item.length : '+items.length);
-                var count = items.length-1;
+                var length = items.length;
+                console.log('item.length : '+length);
+                var count = length-1;
+
                 items.forEach(function (childGroupid) {
                   tree.lset("L/"+childGroupid, 1, parentGroupMemberId, function(err,obj){
                     console.log("count"+count);
@@ -385,18 +449,20 @@ PeopleTree.prototype.deleteNode = function(groupMemberId, f) {
                       callback(null,deleteNumber);
                   });
                 });
+                if(!length) callback(null,deleteNumber);
               }
               else
                 callback(err.message,null);
             });
-
           }
           else{
-            //내가 루트일때, 나의 자식들 부모를 자기 자식으로 변경한다.
+            //내가 루트일때, 나의 자식들 부모를 자기 자신으로 변경한다.
             tree.lrange('L/'+groupMemberId, 2, -1, function (err, items) {
               if (!err){
-                console.log('item.length : '+items.length);
-                var count = items.length-1;
+                var length = items.length;
+                console.log('item.length : '+length);
+                var count = length-1;
+
                 items.forEach(function (childGroupid) {
                   tree.lset("L/"+childGroupid, 1, childGroupid, function(err,obj){
                     console.log("count"+count);
@@ -404,15 +470,32 @@ PeopleTree.prototype.deleteNode = function(groupMemberId, f) {
                       callback(null,deleteNumber);
                   });
                 });
+                if(!length) callback(null,deleteNumber);
               }
               else
                 callback(err.message,null);
             });
           }
       },
+
+      function (deleteNumber, callback) {
+        console.log('--- async.waterfall delete Node #5 ---');
+        //부모가 바뀌기전 부모의 관리 인원 정보를 업데이트.
+        if(deleteNumber){
+          peopleTree.affectAllParents(groupMemberId, -1, false, function(err,result){
+            if(!err)
+              callback(null, deleteNumber);
+            else
+              callback(err.message,null);
+          });
+        }
+        else
+          callback(null, deleteNumber);
+      },
+
       //나의 해시테이블 지우기
       function (parentDeleteNumber, callback) {
-          console.log('--- async.waterfall delete Node #5 ---');
+          console.log('--- async.waterfall delete Node #6 ---');
 
           tree.del("H/"+groupMemberId, function(err,deleteNumber){
 
@@ -426,7 +509,7 @@ PeopleTree.prototype.deleteNode = function(groupMemberId, f) {
       },
       //나의 트리를 위한 리스트 지우기
       function (hashDeleteNumber, callback) {
-        console.log('--- async.waterfall delete Node #6--');
+        console.log('--- async.waterfall delete Node #7--');
 
           tree.del("L/"+groupMemberId, function(err,deleteNumber){
 
@@ -440,7 +523,7 @@ PeopleTree.prototype.deleteNode = function(groupMemberId, f) {
       },
       //나의 위치를 위한 리스트 지우기
       function (listDeleteNumber, callback) {
-        console.log('--- async.waterfall delete Node #7--');
+        console.log('--- async.waterfall delete Node #8--');
 
           tree.del("G/"+groupMemberId, function(err,deleteNumber){
 
@@ -492,10 +575,17 @@ PeopleTree.prototype.isRoot = function(groupMemberId, f) {
 PeopleTree.prototype.changeManageMode = function(groupMemberId, manageMode, f) {
   tree.hset('H/'+groupMemberId, 'manageMode', manageMode, function(err, updateNumber){
     if(!err){
-      if(updateNumber==1)
-        return f(null, 1);
-      else
         return f(null, 0);
+    }
+    else
+      return f(err.message, null);
+  });
+}
+
+PeopleTree.prototype.changeEdgeType = function(groupMemberId, edgeType, f) {
+  tree.hset('H/'+groupMemberId, 'edgeType', edgeType, function(err, updateNumber){
+    if(!err){
+      return f(null, 0);
     }
     else
       return f(err.message, null);
@@ -525,6 +615,7 @@ PeopleTree.prototype.accumulateWarning = function(groupMemberId, resetFlag, f) {
     });
   }
   else{
+    //TODO
     tree.hget('H/'+groupMemberId, 'accumulateWarning', function(err, accumulateWarning){
       if(!err){
         tree.hset('H/'+groupMemberId, 'accumulateWarning', parseInt(accumulateWarning)+1, function(err, updateNumber){
@@ -675,7 +766,7 @@ PeopleTree.prototype.setLocation = function(groupMemberId, latitude, longitude, 
       });
     }
     else
-      return f({state:404, errorDesc:"not exist"},null);
+      return f({status:404, errorDesc:"not exist"},null);
   });
 }
 
@@ -684,7 +775,7 @@ PeopleTree.prototype.getLocation = function(groupMemberId, f){
     console.log(obj.length);
     if(!err){
       if(obj.length==2) return f(null, {latitude:parseFloat(obj[0]), longitude:parseFloat(obj[1])} );
-      else return f({state:400, errorDesc : "not pair location"}, null);
+      else return f({status:400, errorDesc : "not pair location"}, null);
     }
     else return f(err.message, null);
   });
@@ -697,7 +788,7 @@ PeopleTree.prototype.checkLocation = function(groupMemberId, parentGroupMemberId
     peopleTree.checkTrackingModeAndAreaMode(groupMemberId,parentGroupMemberId, manageMode, function(err, result){
       if(!err){
         if(result) return f(null, result);
-        else return f({state:400, errorDesc : "error checkLocation"}, null);
+        else return f({status:400, errorDesc : "error checkLocation"}, null);
       }
       else
         return f(err, null);
@@ -708,12 +799,14 @@ PeopleTree.prototype.checkLocation = function(groupMemberId, parentGroupMemberId
     peopleTree.checkGeofencingMode(groupMemberId,parentGroupMemberId, function(err, result){
       if(!err){
         if(result) return f(null, result);
-        else return f({state:400, errorDesc : "error checkLocation"}, null);
+        else return f({status:400, errorDesc : "error checkLocation"}, null);
       }
       else
         return f(err, null);
     });
   }
+  else
+    return f(null, {status:200, responseData : "manageMode is 200(nothing Mode)"});
 }
 
 PeopleTree.prototype.checkTrackingModeAndAreaMode = function(groupMemberId, parentGroupMemberId, manageMode, f) {
@@ -734,7 +827,7 @@ PeopleTree.prototype.checkTrackingModeAndAreaMode = function(groupMemberId, pare
               points[0].lat = obj.latitude;
               callback(null);
             }
-            else callback({state:400, errorDesc:"your location is null"},null);
+            else callback({status:400, errorDesc:"your location is null"},null);
           }
           else callback(err.message,null);
          });
@@ -754,7 +847,7 @@ PeopleTree.prototype.checkTrackingModeAndAreaMode = function(groupMemberId, pare
                 points[1].lng = obj.longitude;
                 callback(null);
               }
-              else callback({state:400, errorDesc:"parent location is null"},null);
+              else callback({status:400, errorDesc:"parent location is null"},null);
             }
             else callback(err.message,null);
           });
@@ -769,14 +862,14 @@ PeopleTree.prototype.checkTrackingModeAndAreaMode = function(groupMemberId, pare
                   points[1].lng = items[1];
                   callback(null);
                 }
-                else callback({state:400, errorDesc:"parent location is null"},null);
+                else callback({status:400, errorDesc:"parent location is null"},null);
               }
               else callback(err.message,null);              
 
             });
          }
          else
-          callback({state:400, errorDesc:"invaild mode"},null);
+          callback({status:400, errorDesc:"invaild mode"},null);
       },
 
       function(callback){
@@ -821,6 +914,18 @@ PeopleTree.prototype.checkTrackingModeAndAreaMode = function(groupMemberId, pare
 
       function(radius, distance, callback){
         console.log('--- async.waterfall checkTrackingModeAndAreaMode Node #5 ---');
+        if(!validation){
+          peopleTree.affectAllParents(groupMemberId, -1, true, function(err,result){
+            if(!err) callback(null, radius, distance);
+            else callback(err.message, null);
+          });
+        }
+        else
+          callback(null, radius, distance);
+      },
+
+      function(radius, distance, callback){
+        console.log('--- async.waterfall checkTrackingModeAndAreaMode Node #6 ---');
         if(!validation){
           //벗어남 flag가 false 1추가
           peopleTree.accumulateWarning(groupMemberId, false, function(err,accumulateWarning){
@@ -909,7 +1014,7 @@ PeopleTree.prototype.checkGeofencingMode = function(groupMemberId, parentGroupMe
               point.lng = obj.longitude;
               callback(null);
             }
-            else callback({state:400, errorDesc:"your location is null"},null);
+            else callback({status:400, errorDesc:"your location is null"},null);
           }
           else callback(err.message,null);
          });
@@ -927,7 +1032,7 @@ PeopleTree.prototype.checkGeofencingMode = function(groupMemberId, parentGroupMe
               var cur={lat:0, lng:0};
               var first={lat:0, lng:0};
 
-              if(length < 8) callback({state:300,errorDesc:"not enough point, more than triangle"},null);
+              if(length < 8) callback({status:300,errorDesc:"not enough point, more than triangle"},null);
 
               cur.lat = items[0];
               cur.lng = items[1];
@@ -992,6 +1097,18 @@ PeopleTree.prototype.checkGeofencingMode = function(groupMemberId, parentGroupMe
       function(validation, callback){
         console.log('--- async.waterfall checkTrackingModeAndAreaMode Node #5 ---');
         if(!validation){
+          peopleTree.affectAllParents(groupMemberId, -1, true, function(err,result){
+            if(!err) callback(null, validation);
+            else callback(err.message, null);
+          });
+        }
+        else
+          callback(null, validation);
+      },
+
+      function(validation, callback){
+        console.log('--- async.waterfall checkTrackingModeAndAreaMode Node #6 ---');
+        if(!validation){
           //벗어남 flag가 false 1추가
           peopleTree.accumulateWarning(groupMemberId, false, function(err,accumulateWarning){
             if(!err)
@@ -1023,25 +1140,43 @@ PeopleTree.prototype.checkGeofencingMode = function(groupMemberId, parentGroupMe
   });
 }
 
-PeopleTree.prototype.push = function(groupMemberId, alert, message, stateCode, f) {
+PeopleTree.prototype.push = function(from, to, message, statusCode, f) {
+  // data에 "alert": alert 를 넣으면 parse도 noti를 띄운다.
+  peopleTree.isExist(to, function(err,exist){
+    if(exist){
+      tree.hget("H/"+from,'userName',function(err,userName){
+        console.log("userName : "+userName);//값 하나만 가져온다. 키 없이 값만
+        if(!err){
+          if(userName){
+            var notification = {
+                                  where : {
+                                            "deviceType": "android",
+                                            "groupMemberId": parseInt(to)
+                                          },
 
-  var notification = {
+                                  data : {
+                                          "userName": userName,//보낸이 이름을 제목으로
+                                          "from" : from,
+                                          "to" : to,
+                                          "message": message,
+                                          "statusCode":statusCode,
+                                          "action":"com.ssm.peopleTree.message"
+                                         }
+                                };
 
-    where : {
-          "deviceType": "android",
-          "groupMemberId": parseInt(groupMemberId)
-          },
-
-    data : {
-          "alert": alert,
-          "message": message,
-          "stateCode":stateCode
-         }
-  };
-  parse.sendPush(notification, function(err, resp){
-    console.log(resp);
-    if(!err) return f(null,resp.result);
-    else return f(err,null)
+            parse.sendPush(notification, function(err, resp){
+              console.log("to : "+ to+" / "+resp.result);
+              if(!err) return f(null,resp.result);
+              else return f(err,null)
+            });
+          }
+          else f("from user not login",null);
+        }
+        else
+          return f(err.message,null);
+      });
+    }
+    else f("to user not login",null);
   });
 }
 
@@ -1053,18 +1188,19 @@ PeopleTree.prototype.broadcastUp = function(groupMemberId, accumulateWarning, f)
   var valid = true;
   var count = 0;
   var pushArray = [];
-  var upNumber = accumulateWarning+1;
+  var upNumber = parseInt(accumulateWarning)+1;
 
   async.whilst(function () {
     console.log(curParent+"=="+pastParent);
     if(curParent==pastParent)
       valid=false;
+
     return count < upNumber && valid;
   },
   function (next) {
       tree.lindex("L/"+curParent,1,function(err,parentId){
 
-        peopleTree.push(curParent, "위로 갑니다.", "내용입니다.", 300, function(err,result){
+        peopleTree.push(groupMemberId, curParent, "위로 올가는 내용입니다.", 300, function(err,result){
           if(err) console.log(err.message);
         });
         
@@ -1086,37 +1222,14 @@ PeopleTree.prototype.broadcastUp = function(groupMemberId, accumulateWarning, f)
 }
 
 PeopleTree.prototype.broadcastDown = function(groupMemberId, depth, f) {
+//공지메세지 보내기
 //groupMemberId의 부모로 시작해서 depth 아래의 자식 모두에게 푸시를 준다.
 //자식 들을 일단 모으고 
 
-  async.whilst(function () {
-
-    console.log(curParent+"=="+groupMemberId);
-    if(curParent==groupMemberId)
-      valid=false;
-
-    return curParent!=pastParent && valid;
-  },
-  function (next) {
-      tree.lindex("L/"+curParent,1,function(err,parentId){
-        console.log("curParent : "+parentId);
-
-        pastParent = curParent;
-        curParent = parentId;
-
-        next();
-      });
-  },
-  function (err) {
-    return f(null,valid);
-  });
-}
-
-PeopleTree.prototype.broadcastDown = function(groupMemberId, depth, f) {
     peopleTree.gatherChildren(groupMemberId, depth, function(err,children){
         if(!err){
           children.forEach(function (childGroupid) {
-            peopleTree.push(childGroupid, "아래로 갑니다.", "내용입니다.", 300, function(err,result){
+            peopleTree.push(groupMemberId, childGroupid, "아래로 내려가는 내용입니다.", 300, function(err,result){
               if(err) console.log(err.message);
             });
           });
@@ -1129,8 +1242,10 @@ PeopleTree.prototype.broadcastDown = function(groupMemberId, depth, f) {
 PeopleTree.prototype.gatherChildren = function(groupMemberId, depth, f) {
         global.gatherArr = [];
         global.gatherChildrenCall = 0;
+
         gatherChildrenCall++;
         console.log("root callNumber1 : "+ gatherChildrenCall);
+
         peopleTree.gatherChildrenSub(groupMemberId, depth, function(obj){
           console.log("root callNumber2 : "+ gatherChildrenCall);
           if(gatherChildrenCall==0) return f(null, gatherArr);
@@ -1153,6 +1268,7 @@ PeopleTree.prototype.gatherChildrenSub = function(groupMemberId, depth, f) {
           console.log('item.length : '+items.length);
           if(depth > 0){
             items.forEach(function (childGroupid) {
+
               gatherArr.push(parseInt(childGroupid));
               gatherChildrenCall++;
 

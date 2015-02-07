@@ -1,11 +1,34 @@
-/*사용자 정보 가져오기
-#path : GET /getinfo/group/member
-#req : int userId, int groupId
-#res : int userId, int userName, int userPhoneNumber, int edgeType, int edgeStatus, double longitude, double latitude
-*/
-
 var express = require('express');
 var router = express.Router();
+
+/*
+#사용자 정보 가져오기
+#path : GET /getinfo/group/member
+#req : int userNumber
+#res : int userId, int userNumber, int groupMemberId, int parentGroupMemberId, string userName, 
+	   int groupId, int userPhoneNumber, int edgeStatus, int edgeType, int manageMode, 
+	   double managedLocationRadius, double latitude, double longitude, int managingTotalNumber,
+	   int managingNumber, int accumulateWarning
+#e.g :
+		{			
+			"userId":"glory1",
+			"userNumber":1,
+			"groupMemberId":11,
+			"parentGroupMemberId":1,
+			"userName":"영광",
+			"groupId":1,
+			"userPhoneNumber":1028791924,
+			"edgeStatus":200, // 200 - 정상, 300 - 비정상
+			"edgeType" : 100, // 100 - 정보 보고 관계, 200 - 위치 관리 관계 
+			"manageMode":200, // 200 - nothing 모드, 210 - 트레킹 모드, 220 - 지역모드, 230 - 지오펜스모드
+		    "managedLocationRadius":0,
+		    "latitude": null,
+		    "longitude": null,
+			"managingTotalNumber":0,
+		    "managingNumber":0,
+		    "accumulateWarning":0
+		}
+*/
 
 router.get('/group/member',function(req,res){
 
@@ -36,6 +59,7 @@ router.get('/group/member',function(req,res){
 				peopleTree.getItems(userNumber,function(err,obj){
 					if(!err){
 						if(obj){
+							console.log(obj.userName);
 				                    res.json({status:200, responseData :  {
 				                    											"userId":obj.userId,
 				                    											"userNumber":parseInt(obj.userNumber),
@@ -45,6 +69,7 @@ router.get('/group/member',function(req,res){
 				                    											"groupId":parseInt(obj.groupId),
 												                                "userPhoneNumber":parseInt(obj.userPhoneNumber),
 												                                "edgeStatus":parseInt(obj.edgeStatus),
+												                                "edgeType" : parseInt(obj.edgeType),
 												                                "manageMode":parseInt(obj.manageMode),
 												                                "managedLocationRadius":parseFloat(obj.managedLocationRadius),
 												                                "latitude" : parseFloat(obj.latitude),

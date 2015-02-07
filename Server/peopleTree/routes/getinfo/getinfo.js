@@ -1,11 +1,15 @@
-/*사용자 정보 가져오기
-#path : GET /getinfo/group/member
-#req : int userId, int groupId
-#res : int userId, int userName, int userPhoneNumber, int edgeType, int edgeStatus, double longitude, double latitude
-*/
-
 var express = require('express');
 var router = express.Router();
+
+/*
+# RDB만을 참조해서 사용자 정보 가져오기
+#path : GET /_getinfo/group/member
+#req : int userNumber
+#res : int userId, int userNumber, int groupMemberId, int parentGroupMemberId, string userName, 
+	   int groupId, int userPhoneNumber, int edgeStatus, int edgeType, int manageMode, 
+	   double managedLocationRadius, double latitude, double longitude, int managingTotalNumber,
+	   int managingNumber, int accumulateWarning
+*/
 
 router.get('/group/member',function(req,res){
 
@@ -54,7 +58,8 @@ router.get('/group/member',function(req,res){
 				                    											"groupId":data2.groupId,
 												                                "userPhoneNumber":data.userPhoneNumber,
 												                                "edgeStatus": 200,//data2.edgeStatus, 정상상태
-												                                "manageMode":200,//data2.manageMode,  관리자로 시작
+												                                "edgeType" : 100,//100 혼자니까 정보 보고관계 
+												                                "manageMode" : 200,//data2.manageMode,  관리자로 시작
 												                                "managedLocationRadius": 0,//data2.managedLocationRadius,
 												                                "latitude" : null,
 												                                "longitude" : null,

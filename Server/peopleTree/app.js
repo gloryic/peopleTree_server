@@ -22,7 +22,7 @@ var getCurInfo = require('./routes/getinfo/getCurInfo');
 var getInfo = require('./routes/getinfo/getInfo');
 var broadcast = require('./routes/broadcast/parsePush');
 var group = require('./routes/group/group');
-
+var androidEvent = require('./routes/event/androidEvent');
 
 var treeTest = require('./routes/location/peopleTreeTest');
 
@@ -54,6 +54,7 @@ app.use('/ptree/_getinfo', getInfo);//get from RDB
 
 app.use('/ptree/test', treeTest);
 app.use('/ptree/test/broadcast', broadcast);
+app.use('/ptree/event', androidEvent);
 
 /// catch 404 and forwarding to error handler
 app.use(function(req, res, next) {
