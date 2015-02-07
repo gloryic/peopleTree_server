@@ -230,7 +230,7 @@ router.get('/setGeoPoint', function(req, res) {
 
 	var groupMemberId = req.query.groupMemberId;
 	var radius = req.query.radius;
-	var points;// = [{lat:3,lng:1},{lat:2,lng:5}];//req.query.points;//[{}]
+	var points = [{lat:7,lng:4}];//req.query.points;//[{}]
 
 	peopleTree.setGeoPoint(groupMemberId, radius, points, function(err,obj){
 

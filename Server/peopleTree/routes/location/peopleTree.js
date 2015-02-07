@@ -604,7 +604,7 @@ PeopleTree.prototype.changeEdgeStatus = function(groupMemberId, edgeStatus, f) {
 
 PeopleTree.prototype.accumulateWarning = function(groupMemberId, resetFlag, f) {
 
-  //resetFlag가 true 이면 accumulateWarning 0으로 리셋
+  //resetFlag(validation)가 true 이면 accumulateWarning 0으로 리셋
   if(resetFlag){
     tree.hset('H/'+groupMemberId, 'accumulateWarning', 0, function(err, updateNumber){
       if(!err){
@@ -878,54 +878,73 @@ PeopleTree.prototype.checkTrackingModeAndAreaMode = function(groupMemberId, pare
         tree.lindex("G/"+parentGroupMemberId,0,function(err,_radius){
           var radius = parseFloat(_radius);
           console.log("Parent radius : "+radius);
-          if(!err){
+          if(!err)
             callback(null,radius);
-          }
           else
             callback(err.message,null);
         });
       },
 
+      //나의 edgeStatus를 가져온다
       function(radius, callback){
         console.log('--- async.waterfall checkTrackingModeAndAreaMode Node #4 ---');
+        tree.hget("H/"+groupMemberId,'edgeStatus',function(err,edgeStatus){
+          console.log("edgeStatus : "+edgeStatus);//값 하나만 가져온다. 키 없이 값만
+          if(!err)
+            callback(null,radius,parseInt(edgeStatus));
+          else
+            callback(err.message,null);
+        });
+      },
+
+      function(radius, edgeStatus, callback){
+        console.log('--- async.waterfall checkTrackingModeAndAreaMode Node #5 ---');
         var distance = gps.getTotalDistance(points);
         console.log("distance : " + distance);
 
         if(radius < distance) validation = false;
 
         //validation==false 면 edgeStatus를 300으로 변경
-        if(!validation){
+        if(!validation&&edgeStatus!=300){
           peopleTree.changeEdgeStatus(groupMemberId, 300, function(err, updateNumber){
             if(!err)
-              callback(null, radius, distance);
+              callback(null, radius, edgeStatus, distance);
             else
               callback(err.message, null);
           });
         }
-        else{
+        else if(validation&&edgeStatus!=200){
           peopleTree.changeEdgeStatus(groupMemberId, 200, function(err, updateNumber){
             if(!err)
-              callback(null, radius, distance);
+              callback(null, radius, edgeStatus, distance);
             else
               callback(err.message, null);
           });
         }
+        else
+          callback(null, radius, edgeStatus, distance);
       },
 
-      function(radius, distance, callback){
-        console.log('--- async.waterfall checkTrackingModeAndAreaMode Node #5 ---');
-        if(!validation){
+      function(radius, edgeStatus, distance, callback){
+        console.log('--- async.waterfall checkTrackingModeAndAreaMode Node #6 ---');
+        if(!validation&&edgeStatus!=300){
           peopleTree.affectAllParents(groupMemberId, -1, true, function(err,result){
             if(!err) callback(null, radius, distance);
             else callback(err.message, null);
           });
         }
+        else if(validation&&edgeStatus!=200){
+          peopleTree.affectAllParents(groupMemberId, 1, true, function(err,result){
+            if(!err) callback(null, radius, distance);
+            else callback(err.message, null);
+          });
+        }
         else
-          callback(null, radius, distance);
+          callback(null, radius, distance);        
       },
 
       function(radius, distance, callback){
-        console.log('--- async.waterfall checkTrackingModeAndAreaMode Node #6 ---');
+        console.log('--- async.waterfall checkTrackingModeAndAreaMode Node #7 ---');
         if(!validation){
           //벗어남 flag가 false 1추가
           peopleTree.accumulateWarning(groupMemberId, false, function(err,accumulateWarning){
@@ -936,8 +955,8 @@ PeopleTree.prototype.checkTrackingModeAndAreaMode = function(groupMemberId, pare
           });
         }
         else{
-          //true면 0으로 리셋
-          peopleTree.accumulateWarning(groupMemberId, true, function(err,updateNumber){
+          //true면 accumulateWarning을 0으로 리셋
+          peopleTree.accumulateWarning(groupMemberId, true, function(err,accumulateWarning){
             if(!err)
               callback(null, {radius: radius, distance: distance, edgeStatus: "change 200", validation : validation, accumulateWarning:accumulateWarning});
             else
@@ -1073,31 +1092,51 @@ PeopleTree.prototype.checkGeofencingMode = function(groupMemberId, parentGroupMe
           });
       },
 
+      //나의 edgeStatus를 가져온다
       function(validation, callback){
         console.log('--- async.waterfall checkTrackingModeAndAreaMode Node #4 ---');
-        //validation==false 면 edgeStatus를 300으로 변경
-        if(!validation){
-          peopleTree.changeEdgeStatus(groupMemberId, 300, function(err, updateNumber){
-            if(!err)
-              callback(null, validation);
-            else
-              callback(err.message, null);
-          });
-        }
-        else{
-          peopleTree.changeEdgeStatus(groupMemberId, 200, function(err, updateNumber){
-            if(!err)
-              callback(null, validation);
-            else
-              callback(err.message, null);
-          });
-        }
+        tree.hget("H/"+groupMemberId,'edgeStatus',function(err,edgeStatus){
+          console.log("edgeStatus : "+edgeStatus);//값 하나만 가져온다. 키 없이 값만
+          if(!err)
+            callback(null, validation, parseInt(edgeStatus));
+          else
+            callback(err.message, null);
+        });
       },
 
-      function(validation, callback){
+      function(validation, edgeStatus, callback){
+        console.log('--- async.waterfall checkTrackingModeAndAreaMode Node #4 ---');
+        //validation==false 면 edgeStatus를 300으로 변경
+        if(!validation&&edgeStatus!=300){
+          peopleTree.changeEdgeStatus(groupMemberId, 300, function(err, updateNumber){
+            if(!err)
+              callback(null, validation, edgeStatus);
+            else
+              callback(err.message, null);
+          });
+        }
+        else if(validation&&edgeStatus!=200){
+          peopleTree.changeEdgeStatus(groupMemberId, 200, function(err, updateNumber){
+            if(!err)
+              callback(null, validation, edgeStatus);
+            else
+              callback(err.message, null);
+          });
+        }
+        else
+          callback(null, validation, edgeStatus);
+      },
+
+      function(validation, edgeStatus, callback){
         console.log('--- async.waterfall checkTrackingModeAndAreaMode Node #5 ---');
-        if(!validation){
+        if(!validation&&edgeStatus!=300){
           peopleTree.affectAllParents(groupMemberId, -1, true, function(err,result){
+            if(!err) callback(null, validation);
+            else callback(err.message, null);
+          });
+        }
+        else if(validation&&edgeStatus!=200){
+          peopleTree.affectAllParents(groupMemberId, 1, true, function(err,result){
             if(!err) callback(null, validation);
             else callback(err.message, null);
           });
@@ -1119,7 +1158,7 @@ PeopleTree.prototype.checkGeofencingMode = function(groupMemberId, parentGroupMe
         }
         else{
           //true면 0으로 리셋
-          peopleTree.accumulateWarning(groupMemberId, true, function(err,updateNumber){
+          peopleTree.accumulateWarning(groupMemberId, true, function(err,accumulateWarning){
             if(!err)
               callback(null, {edgeStatus: "change 200", validation : validation, accumulateWarning : accumulateWarning});
             else
