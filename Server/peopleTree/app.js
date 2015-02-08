@@ -24,6 +24,8 @@ var getInfoAll = require('./routes/getinfo/getInfoAll');
 var broadcast = require('./routes/broadcast/parsePush');
 var group = require('./routes/group/group');
 var androidEvent = require('./routes/event/androidEvent');
+var util = require('./routes/util/peopleTreeUtil');
+var geoUtil = require('./routes/location/geoUtil');
 
 var treeTest = require('./routes/location/peopleTreeTest');
 
@@ -56,6 +58,8 @@ app.use('/ptree/getinfoall', getInfoAll);
 app.use('/ptree/test', treeTest);
 app.use('/ptree/broadcast', broadcast);
 app.use('/ptree/event', androidEvent);
+app.use('/ptree/util', util);
+app.use('/ptree/geoutil', geoUtil);
 
 /// catch 404 and forwarding to error handler
 app.use(function(req, res, next) {

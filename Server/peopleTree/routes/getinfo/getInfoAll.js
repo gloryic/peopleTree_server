@@ -25,7 +25,7 @@ router.get('/group/member',function(req,res){
 	var childrenInfo=[];
 
 	if(groupMemberId == undefined){
-		res.json({status:300});
+		res.json({status:300, errorDesc :"parameter Error"});
 	}
 	else{
 		queryString = 'SELECT 1 FROM idinfo WHERE userNumber='+"'"+groupMemberId+"'";

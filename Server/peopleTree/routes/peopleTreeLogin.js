@@ -4,6 +4,14 @@ var request = require('request');
 var url = require('url');
 var async = require('async');
 
+/*
+#로그인하기
+#path : GET /ptree/login
+#req : string userId, string password
+#res : int userNumber
+#e.g : {"status":200,"responseData":{"userNumber":42,"desc":"make hash and list"}}
+*/
+
 router.get('/', function(req, res) {
 
 	var userPhoneNumber = req.query.userPhoneNumber;

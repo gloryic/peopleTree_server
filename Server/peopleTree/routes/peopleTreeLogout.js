@@ -4,6 +4,14 @@ var request = require('request');
 var url = require('url');
 var async = require('async');
 
+/*
+#로그아웃하기
+#path : GET /ptree/logout
+#req : int userNumber
+#res : 
+#e.g : {"status":200,"responseData":"logout-Success"}
+*/
+
 router.get('/', function(req, res) {
 
     var userNumber = req.query.userNumber;

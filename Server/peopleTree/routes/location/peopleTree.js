@@ -663,6 +663,50 @@ PeopleTree.prototype.changeRadius = function(groupMemberId, changeRadius, f) {
   });
 }
 
+
+PeopleTree.prototype.getGeoPoint = function(groupMemberId, f) {
+
+  var geoValues =[];
+
+  async.waterfall([
+
+        function(callback){
+           console.log('--- async.waterfall getGeoPoint Node #1 ---');
+           tree.exists("G/"+groupMemberId, function(err, exist){
+            if(!err){
+              if(exist) callback(null);
+              else callback({status:404, errorDesc : "not set GeoPoint"},null);
+            }
+            else callback(err.message, null);
+           });
+        },
+
+        function(callback){
+          console.log('--- async.waterfall getGeoPoint Node #2 ---');
+          tree.lrange('G/'+groupMemberId, 0, -1, function (err, items) {
+            if(!err){
+              items.forEach(function (value) {
+                  geoValues.push(parseFloat(value));
+              });
+              callback(null, geoValues);
+            }
+            else callback(err.message,null);              
+          });
+        }
+    ],
+
+    function(err, results) {
+      console.log('--- async.waterfall result setGeoPoint Node #1 ---');
+      console.log(arguments);
+      if(!err)
+        return f(null,results)
+      else{
+        return f(err, null)
+      }
+    });
+}
+
+
 //위치 유효성 검사에 사용될 포인트를 세팅한다.
 //points=[{lat:0,lng:0},{lat:0,lng:0},{lat:0,lng:0},{lat:0,lng:0}]
 PeopleTree.prototype.setGeoPoint = function(groupMemberId, radius, points, f) {

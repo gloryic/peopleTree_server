@@ -12,12 +12,37 @@ router.get('/setGeoPoint', function(req, res) {
 
 	var groupMemberId = req.query.groupMemberId;
 	var radius = req.query.radius;
-	var points = [{lat:7,lng:4}];//req.query.points;//[{}]
+	var points = req.query.points;// [{lat:7,lng:4}];
 
 	peopleTree.setGeoPoint(groupMemberId, radius, points, function(err,obj){
 		if(!err){
 			console.log("/setGeoPoint : "+ JSON.stringify(obj));
 			res.json({status:200, responseData : "points's length * 2 + 1 = "+ obj });
+		}
+		else{
+			res.json({status:300, errorDesc : err.message });
+		}
+	});
+});
+
+
+/*
+#참조 지역 정보 가져오기
+#path : POST /ptree/location/getGeoPoint
+#req : int groupMemberId, double radius, Obj[] points
+#res : int status, string responseData
+#e.g : {"status":200,"responseData":[0, 1.1111, 1.1111 ]}
+*/
+router.get('/getGeoPoint', function(req, res) {
+
+	var groupMemberId = req.query.groupMemberId;
+	var radius = req.query.radius;
+	var points = [{lat:7,lng:4}];//req.query.points;//[{}]
+
+	peopleTree.getGeoPoint(groupMemberId, function(err,obj){
+		if(!err){
+			console.log("/getGeoPoint : "+ JSON.stringify(obj));
+			res.json({status:200, responseData : obj });
 		}
 		else{
 			res.json({status:300, errorDesc : err.message });

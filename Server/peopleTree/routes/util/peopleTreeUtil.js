@@ -2,10 +2,10 @@ var express = require('express');
 var router = express.Router();
 
 /*
-#디바이스 상태 체크 및 위치 기록 및 위치 체크
-#path : POST /ptree/location/checkMember
-#req : int groupMemeberId, int statusCode, double latitude, double longtitude, int fpId
-#res : 
+#userPhoneNumber, userName, userId 중 하나를 통해서 로그인 된 유저의 정보 가져오기
+#path : GET /util/searchMember
+#req : String keyword
+#res : {"status":200,"responseData":{"groupMembersNumber":3,"groupMembersInfo":[{...},{...},{...}]}}
 #e.g : 
 */
 
@@ -15,40 +15,65 @@ router.get('/searchMember', function(req, res) {
 
 	//groupMemberId 해쉬가 있느냐
 	//userName, userId으로 groupMemberId 가져와 해쉬가 있느냐
-
+	var curInfo={};
+	var arrInfo=[];
+	var groupMemberId;
 	var searchArr = [keyword, keyword, keyword];
-	var queryString='SELECT userId, userNumber, userPhoneNumber, userName FROM idinfo WHERE userId=? OR userPhoneNumber=? OR userName=?';
+	var queryString='SELECT userNumber FROM idinfo WHERE userId=? OR userPhoneNumber=? OR userName=?';
+
 	console.log(queryString);
 
-	var query = dbcon.query(queryString, function(err,rows){
+	var query = dbcon.query(queryString, searchArr, function(err,rows){
 		console.log("rows.length : "+rows.length);
+		if(!err){
+			if (rows.length == 0)
+				res.json({status:200, responseData : {groupMembersNumber : arrInfo.length, groupMembersInfo : arrInfo} });
+			else{	
+				
+				var length = rows.length;
+                var count = length-1;
 
-		if (rows.length == 0){
+                rows.forEach(function (row) {
+                	groupMemberId = row.userNumber;
+                	console.log("groupMemberId : "+groupMemberId);
 
-			res.json({status:300, errorDesc : "SELECT FROM idinfo - Login FAIL"});
+					peopleTree.getItems(groupMemberId,function(err,obj){
+
+						if(!err){
+							if(obj){
+								console.log(obj.userName);
+			                    arrInfo.push({
+        											"userId":obj.userId,
+        											"userNumber":parseInt(obj.userNumber),
+        											"groupMemberId":parseInt(obj.groupMemberId),
+        											"parentGroupMemberId":parseInt(obj.parentGroupMemberId),
+        											"userName":obj.userName,
+        											"groupId":parseInt(obj.groupId),
+					                                "userPhoneNumber": obj.userPhoneNumber,
+					                                "edgeStatus":parseInt(obj.edgeStatus),
+					                                "edgeType" : parseInt(obj.edgeType),
+					                                "manageMode":parseInt(obj.manageMode),
+					                                "managedLocationRadius":parseFloat(obj.managedLocationRadius),
+					                                "latitude" : parseFloat(obj.latitude),
+					                                "longitude" : parseFloat(obj.longitude),
+					                                "managingTotalNumber" : parseInt(obj.managingTotalNumber),
+					                                "managingNumber" : parseInt(obj.managingNumber),
+					                                "accumulateWarning" : parseInt(obj.accumulateWarning)
+					                            });
+							}
+							if(!count--) res.json({status:200, responseData : {groupMembersNumber : arrInfo.length, groupMembersInfo : arrInfo} });
+						}
+						else
+							res.json({status:404, errorDesc : err});			
+					});
+	
+				});
+				if(!length) res.json({status:200, responseData : {groupMembersNumber : arrInfo.length, groupMembersInfo : arrInfo} });
+			}
 		}
-
-		else{
-			res.json({status:300, errorDesc : "SELECT FROM idinfo - Login FAIL"});
-		}
-
+		else 
+			res.json({status:500, responseData : err.message});
 	});
-
-
-
-	peopleTree.isExist(groupMemberId,function(){
-
-
-
-	});
-
-
-
-
-
-
-
-
 });
 
 
@@ -85,3 +110,5 @@ router.get('/showTree', function(req, res) {
 		}
 	});
 });
+
+module.exports = router;
