@@ -77,11 +77,10 @@ router.get('/searchMember', function(req, res) {
 });
 
 
-
 /*
-#디바이스 상태 체크 및 위치 기록 및 위치 체크
-#path : POST /ptree/location/checkMember
-#req : int groupMemeberId, int statusCode, double latitude, double longtitude, int fpId
+#트리구조 가져오기
+#path : POST  /util/showTree
+#req : int groupMemeberId
 #res : 
 #e.g : 
 */

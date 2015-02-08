@@ -571,14 +571,12 @@ PeopleTree.prototype.isRoot = function(groupMemberId, f) {
 
 //부모가 정한 유효 범위에 있는지 체크한다.
 //manageMode는 
-//100은 관리대상
-//200은 관리자
+//200은 nothing 모드
 //210은 트레킹 모드. 참조값 : 관리자의 위치, 반경
 //220 지역모드 : 중심 위치, 반경
 //230은 지오펜스모드
-//230이면 managedlocationpoint 테이블을 참조한다.
-
 //G/{groupMemberId} : 0번 반경, 
+
 PeopleTree.prototype.changeManageMode = function(groupMemberId, manageMode, f) {
   tree.hset('H/'+groupMemberId, 'manageMode', manageMode, function(err, updateNumber){
     if(!err){
@@ -825,7 +823,7 @@ PeopleTree.prototype.getLocation = function(groupMemberId, f){
     console.log(obj.length);
     if(!err){
       if(obj.length==2) return f(null, {latitude:parseFloat(obj[0]), longitude:parseFloat(obj[1])} );
-      else return f({status:400, errorDesc : "not pair location"}, null);
+      else return f("not pair location", null);
     }
     else return f(err.message, null);
   });
@@ -838,7 +836,7 @@ PeopleTree.prototype.checkLocation = function(groupMemberId, parentGroupMemberId
     peopleTree.checkTrackingModeAndAreaMode(groupMemberId,parentGroupMemberId, manageMode, function(err, result){
       if(!err){
         if(result) return f(null, result);
-        else return f({status:400, errorDesc : "error checkLocation"}, null);
+        else return f(err, null);
       }
       else
         return f(err, null);
@@ -849,7 +847,7 @@ PeopleTree.prototype.checkLocation = function(groupMemberId, parentGroupMemberId
     peopleTree.checkGeofencingMode(groupMemberId,parentGroupMemberId, function(err, result){
       if(!err){
         if(result) return f(null, result);
-        else return f({status:400, errorDesc : "error checkLocation"}, null);
+        else return f(err, null);
       }
       else
         return f(err, null);
@@ -877,9 +875,9 @@ PeopleTree.prototype.checkTrackingModeAndAreaMode = function(groupMemberId, pare
               points[0].lat = obj.latitude;
               callback(null);
             }
-            else callback({status:400, errorDesc:"your location is null"},null);
+            else callback({status:300, errorDesc:"your location is null"},null);
           }
-          else callback(err.message,null);
+          else callback({status:400, errorDesc: err},null);
          });
       },
 
@@ -897,9 +895,9 @@ PeopleTree.prototype.checkTrackingModeAndAreaMode = function(groupMemberId, pare
                 points[1].lng = obj.longitude;
                 callback(null);
               }
-              else callback({status:400, errorDesc:"parent location is null"},null);
+              else callback({status:300, errorDesc:"parent location is null"},null);
             }
-            else callback(err.message,null);
+            else callback({status:400, errorDesc: err},null);
           });
         }
         else if(manageMode==220){
@@ -912,9 +910,9 @@ PeopleTree.prototype.checkTrackingModeAndAreaMode = function(groupMemberId, pare
                   points[1].lng = items[1];
                   callback(null);
                 }
-                else callback({status:400, errorDesc:"parent location is null"},null);
+                else callback({status:300, errorDesc:"parent location is null"},null);
               }
-              else callback(err.message,null);              
+              else callback({status:400, errorDesc: err.message},null);              
 
             });
          }
@@ -931,7 +929,7 @@ PeopleTree.prototype.checkTrackingModeAndAreaMode = function(groupMemberId, pare
           if(!err)
             callback(null,radius);
           else
-            callback(err.message,null);
+            callback({status:400, errorDesc: err.message},null);
         });
       },
 
@@ -943,7 +941,7 @@ PeopleTree.prototype.checkTrackingModeAndAreaMode = function(groupMemberId, pare
           if(!err)
             callback(null,radius,parseInt(edgeStatus));
           else
-            callback(err.message,null);
+            callback({status:400, errorDesc: err.message},null);
         });
       },
 
@@ -960,7 +958,7 @@ PeopleTree.prototype.checkTrackingModeAndAreaMode = function(groupMemberId, pare
             if(!err)
               callback(null, radius, edgeStatus, distance);
             else
-              callback(err.message, null);
+              callback({status:400, errorDesc: err}, null);
           });
         }
         else if(validation&&edgeStatus!=200){
@@ -968,7 +966,7 @@ PeopleTree.prototype.checkTrackingModeAndAreaMode = function(groupMemberId, pare
             if(!err)
               callback(null, radius, edgeStatus, distance);
             else
-              callback(err.message, null);
+              callback({status:400, errorDesc: err}, null);
           });
         }
         else
@@ -980,13 +978,13 @@ PeopleTree.prototype.checkTrackingModeAndAreaMode = function(groupMemberId, pare
         if(!validation&&edgeStatus!=300){
           peopleTree.affectAllParents(groupMemberId, -1, true, function(err,result){
             if(!err) callback(null, radius, distance);
-            else callback(err.message, null);
+            else callback({status:400, errorDesc: err}, null);
           });
         }
         else if(validation&&edgeStatus!=200){
           peopleTree.affectAllParents(groupMemberId, 1, true, function(err,result){
             if(!err) callback(null, radius, distance);
-            else callback(err.message, null);
+            else callback({status:400, errorDesc: err}, null);
           });
         }
         else
@@ -999,18 +997,18 @@ PeopleTree.prototype.checkTrackingModeAndAreaMode = function(groupMemberId, pare
           //벗어남 flag가 false 1추가
           peopleTree.accumulateWarning(groupMemberId, false, function(err,accumulateWarning){
             if(!err)
-              callback(null, {radius: radius, distance: distance, edgeStatus: "change 300", validation : validation, accumulateWarning : accumulateWarning});
+              callback(null, {radius: radius, distance: distance, edgeStatus: 300, validation : validation, accumulateWarning : accumulateWarning});
             else
-              callback(err.message, null);
+              callback({status:400, errorDesc: err}, null);
           });
         }
         else{
           //true면 accumulateWarning을 0으로 리셋
           peopleTree.accumulateWarning(groupMemberId, true, function(err,accumulateWarning){
             if(!err)
-              callback(null, {radius: radius, distance: distance, edgeStatus: "change 200", validation : validation, accumulateWarning:accumulateWarning});
+              callback(null, {radius: radius, distance: distance, edgeStatus: 200, validation : validation, accumulateWarning:accumulateWarning});
             else
-              callback(err.message, null);
+              callback({status:400, errorDesc: err}, null);
           });
         }
       },
@@ -1085,7 +1083,7 @@ PeopleTree.prototype.checkGeofencingMode = function(groupMemberId, parentGroupMe
             }
             else callback({status:400, errorDesc:"your location is null"},null);
           }
-          else callback(err.message,null);
+          else callback({status:400, errorDesc: err},null);
          });
       },
 
@@ -1138,7 +1136,7 @@ PeopleTree.prototype.checkGeofencingMode = function(groupMemberId, parentGroupMe
               }
             }
             else
-              callback(err.message,null);
+              callback({status:400, errorDesc: err.message},null);
           });
       },
 
@@ -1150,7 +1148,7 @@ PeopleTree.prototype.checkGeofencingMode = function(groupMemberId, parentGroupMe
           if(!err)
             callback(null, validation, parseInt(edgeStatus));
           else
-            callback(err.message, null);
+            callback({status:400, errorDesc: err.message}, null);
         });
       },
 
@@ -1162,7 +1160,7 @@ PeopleTree.prototype.checkGeofencingMode = function(groupMemberId, parentGroupMe
             if(!err)
               callback(null, validation, edgeStatus);
             else
-              callback(err.message, null);
+              callback({status:400, errorDesc: err}, null);
           });
         }
         else if(validation&&edgeStatus!=200){
@@ -1170,7 +1168,7 @@ PeopleTree.prototype.checkGeofencingMode = function(groupMemberId, parentGroupMe
             if(!err)
               callback(null, validation, edgeStatus);
             else
-              callback(err.message, null);
+              callback({status:400, errorDesc: err}, null);
           });
         }
         else
@@ -1182,13 +1180,13 @@ PeopleTree.prototype.checkGeofencingMode = function(groupMemberId, parentGroupMe
         if(!validation&&edgeStatus!=300){
           peopleTree.affectAllParents(groupMemberId, -1, true, function(err,result){
             if(!err) callback(null, validation);
-            else callback(err.message, null);
+            else callback({status:400, errorDesc: err}, null);
           });
         }
         else if(validation&&edgeStatus!=200){
           peopleTree.affectAllParents(groupMemberId, 1, true, function(err,result){
             if(!err) callback(null, validation);
-            else callback(err.message, null);
+            else callback({status:400, errorDesc: err}, null);
           });
         }
         else
@@ -1202,19 +1200,19 @@ PeopleTree.prototype.checkGeofencingMode = function(groupMemberId, parentGroupMe
           peopleTree.accumulateWarning(groupMemberId, false, function(err,accumulateWarning){
             if(!err){
               //TODO 누적치 만큼 푸시 위로 올리기
-              callback(null, {edgeStatus: "change 300", validation : validation, accumulateWarning : accumulateWarning});
+              callback(null, {edgeStatus: 300, validation : validation, accumulateWarning : accumulateWarning});
             }
             else
-              callback(err.message, null);
+              callback({status:400, errorDesc: err}, null);
           });
         }
         else{
           //true면 0으로 리셋
           peopleTree.accumulateWarning(groupMemberId, true, function(err,accumulateWarning){
             if(!err)
-              callback(null, {edgeStatus: "change 200", validation : validation, accumulateWarning : accumulateWarning});
+              callback(null, {edgeStatus: 200, validation : validation, accumulateWarning : accumulateWarning});
             else
-              callback(err.message, null);
+              callback({status:400, errorDesc: err}, null);
           });
         }
       }
