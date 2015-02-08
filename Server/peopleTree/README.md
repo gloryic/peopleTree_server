@@ -5,15 +5,14 @@
 groupMemberId는 userNumber
 사용자 가입시 아디이는 userId 이다.
 
-#manageMode는 100은 관리대상 ,200은 관리자 210은 트레킹 모드, 220 지역모드 230은 지오펜스모드
+#manageMode는 200은 nothing, 210은 트레킹 모드, 220 지역모드, 230은 지오펜스모드, 300은 실내 모드
 
 state
-200 //정상
-300 //그냥 범용 에러
+200 // 정상
+300 // 그냥 범용 에러
 404 // Not found
 303 // already exist
 500 // 내부 디비 에러
-
 
 사용자가 첫 로그인 및 가입을 하게되면 유저는 일인 일 그룹원의 그룹장이 되며 시작된다.
 즉 그룹테이블에도 하나의 그룹이 새로 추가되며, 그룹멤버 테이블에도 하나의 그룹원으로 추가가 된다.
@@ -34,7 +33,8 @@ http://210.118.74.107:3000/ptree/getinfo/group/member?userNumber=26
 							"userNumber":1,
 							"groupMemberId":11,
 							"parentGroupMemberId":1,
-							"userName":"영광","groupId":1,
+							"userName":"영광",
+              "groupId":1,
 							"userPhoneNumber":1028790924,
 							"edgeStatus":200,
 							"longitude":"null",
@@ -170,13 +170,16 @@ http://210.118.74.107:3000/ptree/make/group?userPhoneNumber=01011113333&userId=j
 [groupMemberId, parentGroupMemberId, childGroupMemberId, ...]
 
 totalLen - 2 == 전체 자식들의 수
+
 ## 공지 메세지와 상태변화 메세지 이탈자 발생 메세지
-공지메세지 100
-상태변화 메세지 210//gps끄기, 220//wifi 끄기, 230//배터리 부족
-이탈자 발생 메세지 300
-관계 요청 메세지 410, 420, 510, 520 
-//410 - 내 밑으로 들어와라, edgeType(100), 420 - 내 밑으로 들어와라 edgeType(200)
-//510 - 저를 받아주세요, edgeType(100), 520 - 저를 받아주세요 edgeType(200)
+
+공지메세지 - 100
+상태변화 메세지 - 210//gps끄기, 220//wifi 끄기, 230//배터리 부족
+이탈자 발생 메세지 - 300
+관계 요청 메세지 - 410, 420, 510, 520 
+					//410 - 내 밑으로 들어와라, edgeType(100), 420 - 내 밑으로 들어와라 edgeType(200)
+					//510 - 저를 받아주세요, edgeType(100), 520 - 저를 받아주세요 edgeType(200)
+일반메시지 - 600
 
 #공지메세지 100
     data : {

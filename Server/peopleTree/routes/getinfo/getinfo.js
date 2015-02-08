@@ -5,8 +5,8 @@ var router = express.Router();
 # RDB만을 참조해서 사용자 정보 가져오기
 #path : GET /_getinfo/group/member
 #req : int userNumber
-#res : int userId, int userNumber, int groupMemberId, int parentGroupMemberId, string userName, 
-	   int groupId, int userPhoneNumber, int edgeStatus, int edgeType, int manageMode, 
+#res : int userId, string userNumber, int groupMemberId, int parentGroupMemberId, string userName, 
+	   int groupId, string userPhoneNumber, int edgeStatus, int edgeType, int manageMode, 
 	   double managedLocationRadius, double latitude, double longitude, int managingTotalNumber,
 	   int managingNumber, int accumulateWarning
 */

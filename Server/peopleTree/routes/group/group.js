@@ -19,7 +19,7 @@ router.get('/children',function(req,res){
 });
 
 /*
-#모든 자식만을 가져온다.
+#모든 자식을 가져온다.
 #path : GET /ptree/group/allChildren
 #req : int groupMemberId
 #res : int[] allChildren, int numberOfAllChildren
@@ -28,7 +28,7 @@ router.get('/children',function(req,res){
 router.get('/allChildren',function(req,res){
 
     var groupMemberId = req.query.groupMemberId;
-    var MAX = 1000;//최대 ㄴ깊이 1000까지 들어간다.
+    var MAX = 1000;//최대 깊이 1000까지 들어간다.
 
     peopleTree.gatherChildren(groupMemberId, MAX, function(err,children){
         if(!err) res.json({status:200, responseData : {allChildren : children, numberOfAllChildren : children.length}});

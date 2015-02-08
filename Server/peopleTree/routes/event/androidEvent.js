@@ -11,7 +11,7 @@ var router = express.Router();
 #path : POST /ptree/request/edge
 #req : int from, int to, int statusCode
 #res : int from, int to, int statusCode, string message
-#e.g : {"status":200,"responseData":{"from":"26","to":"27","statusCode":"410","message":"send requset"}}
+#e.g : {"status":200,"responseData":{"from":26,"to":27,"statusCode":410,"message":"send requset"}}
 */
 //410 - 아래, 내 밑으로 들어와라, edgeType(100), 420 - 내 밑으로 들어와라 edgeType(200)
 //510 - 위, 저를 받아주세요, edgeType(100), 520 - 저를 받아주세요 edgeType(200)
@@ -24,11 +24,12 @@ router.get('/request/edge',function(req,res){
     var from = req.query.from; // 요청자
 	var to = req.query.to; // 기대확인자
 	var statusCode = req.query.statusCode;
+
 	if(from&&to&&statusCode){
 	    peopleTree.push(from, to, requestMessage[statusCode], statusCode, function(err,result){
 	      if(err || !result) console.log("ERR /request/edge : "+err+"/"+result);
 	    });
-	    res.json({status:200, responseData : { from : from, to : to, statusCode: statusCode, message :"send requset" } });
+	    res.json({status:200, responseData : { from : parseInt(from), to : parseInt(to), statusCode: parseInt(statusCode), message :"send requset" } });
 	}
 	else res.json({status:300, errorDesc : "parameter Error" });
 });
@@ -37,13 +38,15 @@ router.get('/request/edge',function(req,res){
 #연결관계 확인하기
 #path : POST /ptree/make/edge
 #req : int groupMemberId
-#res : {"status":200,"responseData":{"children":[27],"numberOfChildren":1}}
+#res :  int from, int to, int statusCode, string message
+#e.g : {"status":200,"responseData":{"from":20,"to":41,"statusCode":420,"message":"confirm requset"}}
 */
 router.get('/make/edge',function(req,res){
 
-    var from = req.query.from; // 확인자
-	var to = req.query.to; // 요청자
-	var statusCode = req.query.statusCode;
+    var from = parseInt(req.query.from); // 확인자
+	var to = parseInt(req.query.to); // 요청자
+	var statusCode = parseInt(req.query.statusCode)
+
 	var groupMemberId;
 	var parentGroupMemberId;
 	var edgeType;
@@ -65,13 +68,13 @@ router.get('/make/edge',function(req,res){
 			statusCode == 410 ? edgeType = 100 :edgeType = 200;	
 		}
 
-		peopleTree.changeParent(groupMemberId,parentGroupMemberId,function(err,result){
+		peopleTree.changeParent(groupMemberId, parentGroupMemberId, function(err,result){
 			if(!err&&result.status==200){
 				peopleTree.changeEdgeType(groupMemberId, edgeType, function(err, result){
 				    peopleTree.push(from, to, confirmMessage[statusCode], statusCode, function(err,result){
 				      if(err || !result) console.log("ERR /make/edge : "+err+"/"+result);
 				    });
-				    res.json({status:200, responseData : { from : from, to : to, statusCode: statusCode, message :"confirm requset" } });
+				    res.json({status:200, responseData : { from : parseInt(from), to : parseInt(to), statusCode: parseInt(statusCode), message :"confirm requset" } });
 				});
 			}
 			else

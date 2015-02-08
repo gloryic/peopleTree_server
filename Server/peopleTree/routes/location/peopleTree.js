@@ -215,11 +215,11 @@ PeopleTree.prototype.changeParent = function(groupMemberId, parentGroupMemberId,
         },
 
         function (myData, parentData, callback) {
-          //TODO
           console.log('--- async.waterfall changeParent #4 ---');
           //부모가 바뀌기전 부모의 관리 인원 정보를 업데이트.
+          //내가 관리하고 있는 전체 인원의 수+1을 뺀다 
           if(groupMemberId != myData.parentGroupMemberId){
-            peopleTree.affectAllParents(groupMemberId, -1, false, function(err,result){
+            peopleTree.affectAllParents(groupMemberId, -1*(parseInt(myData.managingTotalNumber)+1), false, function(err,result){
               if(!err)
                 callback(null,myData, parentData);
               else
@@ -238,28 +238,28 @@ PeopleTree.prototype.changeParent = function(groupMemberId, parentGroupMemberId,
           console.log("myChangeParent : "+JSON.stringify(items));
           tree.hmset("H/"+groupMemberId, items, function(err,obj){
             if(!err)
-              callback(null);
+              callback(null, myData);
             else
               callback(err.message,null);
           });
         },
 
-        function (callback) {
+        function (myData, callback) {
           console.log('--- async.waterfall changeParent #7 ---');
           //리스트에서 나의 부모를 변경
           tree.lset("L/"+groupMemberId,1,parentGroupMemberId,function(err,obj){
             if(!err)
-              callback(null);
+              callback(null, myData);
             else
               callback(err.message,null);
           });
         },
 
-        function (callback) {
-          //TODO
+        function (myData, callback) {
           console.log('--- async.waterfall changeParent #6 ---');
           //부모가 변경되고 부모의 관리 인원 정보를 업데이트.
-          peopleTree.affectAllParents(groupMemberId, 1, false, function(err,result){
+          //내가 관리하고 있는 전체 인원의 수+1을 더한다.  
+          peopleTree.affectAllParents(groupMemberId, (parseInt(myData.managingTotalNumber)+1), false, function(err,result){
             if(!err)
               callback(null);
             else
@@ -320,7 +320,6 @@ PeopleTree.prototype.affectAllParents = function(groupMemberId, number, isStray,
           pushArray.push(parseInt(curParent));
 
           console.log("curParent : "+curParent);
-          //TODO
           tree.hget("H/"+curParent,'managingNumber',function(err,managingNumber){
               if(managingNumber > 0 || number >= 0){
                 tree.hincrby("H/"+curParent, "managingNumber", number, function(err,obj){
@@ -623,7 +622,6 @@ PeopleTree.prototype.accumulateWarning = function(groupMemberId, resetFlag, f) {
     });
   }
   else{
-    //TODO
     tree.hget('H/'+groupMemberId, 'accumulateWarning', function(err, accumulateWarning){
       if(!err){
         tree.hset('H/'+groupMemberId, 'accumulateWarning', parseInt(accumulateWarning)+1, function(err, updateNumber){
@@ -1158,8 +1156,10 @@ PeopleTree.prototype.checkGeofencingMode = function(groupMemberId, parentGroupMe
         if(!validation){
           //벗어남 flag가 false 1추가
           peopleTree.accumulateWarning(groupMemberId, false, function(err,accumulateWarning){
-            if(!err)
+            if(!err){
+              //TODO 누적치 만큼 푸시 위로 올리기
               callback(null, {edgeStatus: "change 300", validation : validation, accumulateWarning : accumulateWarning});
+            }
             else
               callback(err.message, null);
           });
@@ -1187,6 +1187,7 @@ PeopleTree.prototype.checkGeofencingMode = function(groupMemberId, parentGroupMe
   });
 }
 
+//GCM push
 PeopleTree.prototype.push = function(from, to, message, statusCode, f) {
   // data에 "alert": alert 를 넣으면 parse도 noti를 띄운다.
   peopleTree.isExist(to, function(err,exist){
@@ -1203,10 +1204,10 @@ PeopleTree.prototype.push = function(from, to, message, statusCode, f) {
 
                                   data : {
                                           "userName": userName,//보낸이 이름을 제목으로
-                                          "from" : from,
-                                          "to" : to,
+                                          "from" : parseInt(from),
+                                          "to" : parseInt(to),
                                           "message": message,
-                                          "statusCode":statusCode,
+                                          "statusCode":parseInt(statusCode),
                                           "action":"com.ssm.peopleTree.message"
                                          }
                                 };
@@ -1227,7 +1228,7 @@ PeopleTree.prototype.push = function(from, to, message, statusCode, f) {
   });
 }
 
-PeopleTree.prototype.broadcastUp = function(groupMemberId, accumulateWarning, f) {
+PeopleTree.prototype.broadcastUp = function(groupMemberId, accumulateWarning, message, f) {
 //groupMemberId의 부모로 시작해서 (accumulWarning-1) 위의 부모 만큼 푸시를 준다.
 
   var curParent = groupMemberId;
@@ -1247,7 +1248,7 @@ PeopleTree.prototype.broadcastUp = function(groupMemberId, accumulateWarning, f)
   function (next) {
       tree.lindex("L/"+curParent,1,function(err,parentId){
 
-        peopleTree.push(groupMemberId, curParent, "위로 올가는 내용입니다.", 300, function(err,result){
+        peopleTree.push(groupMemberId, curParent, message, 300, function(err,result){
           if(err) console.log(err.message);
         });
         
@@ -1268,7 +1269,7 @@ PeopleTree.prototype.broadcastUp = function(groupMemberId, accumulateWarning, f)
   });
 }
 
-PeopleTree.prototype.broadcastDown = function(groupMemberId, depth, f) {
+PeopleTree.prototype.broadcastDown = function(groupMemberId, depth, message, f) {
 //공지메세지 보내기
 //groupMemberId의 부모로 시작해서 depth 아래의 자식 모두에게 푸시를 준다.
 //자식 들을 일단 모으고 
@@ -1276,7 +1277,7 @@ PeopleTree.prototype.broadcastDown = function(groupMemberId, depth, f) {
     peopleTree.gatherChildren(groupMemberId, depth, function(err,children){
         if(!err){
           children.forEach(function (childGroupid) {
-            peopleTree.push(groupMemberId, childGroupid, "아래로 내려가는 내용입니다.", 300, function(err,result){
+            peopleTree.push(groupMemberId, childGroupid, message, 300, function(err,result){
               if(err) console.log(err.message);
             });
           });
@@ -1362,7 +1363,7 @@ PeopleTree.prototype.showTree = function(rootGroupMemberId, position, index, f) 
             console.log("items.length : "+items.length);
             console.log("childGroupid "+count+" : "+childGroupid);
            
-            position.push({id : childGroupid, children:[]});
+            position.push({id : parseInt(childGroupid), children:[]});
 
             callNumber++;
 

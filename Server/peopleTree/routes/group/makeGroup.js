@@ -8,10 +8,11 @@ var async = require('async');
 */
 
 /*
-#그룹 생성 하기 (가입하기 step.1)
+#그룹 생성 하기
 #path : POST /ptree/make/group
-#req : int ownPhoneNumber
-#res : int status, int groupId
+#req : string userPhoneNumber, int userId, int password, string userName, string groupName
+#res : int userNumber, int groupId
+#e.g : {"status":200,"responseData":{"userNumber":45,"message":"make group success"}}
 */
 router.get('/',function(req,res){
     
@@ -146,7 +147,7 @@ router.get('/',function(req,res){
 		  console.log('--- async.waterfall result #1 ---');
 		  console.log(arguments);
 		  if(!err)
-		  	res.json({status:200, responseData : {userNumber:userNumber, desc:"make group success"}});
+		  	res.json({status:200, responseData : {userNumber:userNumber, message:"make group success"}});
 		  else
 		  	res.json({status:500, errorDesc :"make group failed"});
 		});

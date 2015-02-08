@@ -83,7 +83,7 @@ router.get('/showTree', function(req, res) {
 		if(!err){
 			if(flag){
 				global.callNumber = 0;
-				global.treeJson = [{id : rootGroupMemberId, children:[]}];
+				global.treeJson = [{id : parseInt(rootGroupMemberId), children:[]}];
 				var position = treeJson;
 				callNumber++;
 				console.log("root callNumber1 : "+ callNumber);

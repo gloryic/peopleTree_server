@@ -15,11 +15,12 @@ var index = require('./routes/index');
 var ptreeLogin = require('./routes/peopleTreeLogin');
 var ptreeLogout = require('./routes/peopleTreeLogout');
 
-var makeEdge = require('./routes/group/makeEdge');
 var makeGroup = require('./routes/group/makeGroup');
 
 var getCurInfo = require('./routes/getinfo/getCurInfo');
 var getInfo = require('./routes/getinfo/getInfo');
+var getInfoAll = require('./routes/getinfo/getInfoAll');
+
 var broadcast = require('./routes/broadcast/parsePush');
 var group = require('./routes/group/group');
 var androidEvent = require('./routes/event/androidEvent');
@@ -47,13 +48,13 @@ app.use('/ptree/login', ptreeLogin);
 app.use('/ptree/logout', ptreeLogout);
 
 app.use('/ptree/group', group);
-app.use('/ptree/make/edge', makeEdge);
 app.use('/ptree/make/group', makeGroup);
 app.use('/ptree/getinfo', getCurInfo);//get from redis and RDB
 app.use('/ptree/_getinfo', getInfo);//get from RDB
+app.use('/ptree/getinfoall', getInfoAll);
 
 app.use('/ptree/test', treeTest);
-app.use('/ptree/test/broadcast', broadcast);
+app.use('/ptree/broadcast', broadcast);
 app.use('/ptree/event', androidEvent);
 
 /// catch 404 and forwarding to error handler

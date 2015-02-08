@@ -5,8 +5,8 @@ var router = express.Router();
 #사용자 정보 가져오기
 #path : GET /getinfo/group/member
 #req : int userNumber
-#res : int userId, int userNumber, int groupMemberId, int parentGroupMemberId, string userName, 
-	   int groupId, int userPhoneNumber, int edgeStatus, int edgeType, int manageMode, 
+#res : int userId, string userNumber, int groupMemberId, int parentGroupMemberId, string userName, 
+	   int groupId, string userPhoneNumber, int edgeStatus, int edgeType, int manageMode, 
 	   double managedLocationRadius, double latitude, double longitude, int managingTotalNumber,
 	   int managingNumber, int accumulateWarning
 #e.g :
@@ -55,7 +55,7 @@ router.get('/group/member',function(req,res){
         }
         else{
             if(rows.length == 1){
-            	//로그인 상태라면 메모리에서 값을 읽어온다.	
+            	//로그인 상태라면 메모리에서 값을 읽어온다.
 				peopleTree.getItems(userNumber,function(err,obj){
 					if(!err){
 						if(obj){
@@ -65,9 +65,9 @@ router.get('/group/member',function(req,res){
 				                    											"userNumber":parseInt(obj.userNumber),
 				                    											"groupMemberId":parseInt(obj.groupMemberId),
 				                    											"parentGroupMemberId":parseInt(obj.parentGroupMemberId),
-				                    											"userName":obj.userName, 
+				                    											"userName":obj.userName,
 				                    											"groupId":parseInt(obj.groupId),
-												                                "userPhoneNumber":parseInt(obj.userPhoneNumber),
+												                                "userPhoneNumber": obj.userPhoneNumber,
 												                                "edgeStatus":parseInt(obj.edgeStatus),
 												                                "edgeType" : parseInt(obj.edgeType),
 												                                "manageMode":parseInt(obj.manageMode),
