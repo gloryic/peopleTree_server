@@ -126,8 +126,8 @@ router.get('/group/member',function(req,res){
 				                console.log('item.length!! : '+length);
 				                var count = length-1;
 
-				                children.forEach(function (childGroupid) {
-									peopleTree.getItems(childGroupid,function(err,obj){
+				                children.forEach(function (childGroupMemberid) {
+									peopleTree.getItems(childGroupMemberid,function(err,obj){
 										if(!err){
 											if(obj){
 												console.log(obj.userName);

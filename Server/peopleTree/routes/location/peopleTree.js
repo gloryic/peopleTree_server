@@ -423,8 +423,8 @@ PeopleTree.prototype.deleteNode = function(groupMemberId, f) {
                 console.log('item.length : '+length);
                 var count = length-1;
 
-                items.forEach(function (childGroupid) {
-                  tree.rpush("L/"+parentGroupMemberId, childGroupid, function(err,obj){
+                items.forEach(function (childGroupMemberId) {
+                  tree.rpush("L/"+parentGroupMemberId, childGroupMemberId, function(err,obj){
                     console.log("count"+count);
                     if(!count--)
                       callback(null, parentGroupMemberId, deleteNumber);
@@ -449,11 +449,13 @@ PeopleTree.prototype.deleteNode = function(groupMemberId, f) {
                 console.log('item.length : '+length);
                 var count = length-1;
 
-                items.forEach(function (childGroupid) {
-                  tree.lset("L/"+childGroupid, 1, parentGroupMemberId, function(err,obj){
-                    console.log("count"+count);
-                    if(!count--)
-                      callback(null,deleteNumber);
+                items.forEach(function (childGroupMemberId) {
+                  tree.lset("L/"+childGroupMemberId, 1, parentGroupMemberId, function(err,obj){
+                    tree.hset('H/'+childGroupMemberId, 'parentGroupMemberId', parentGroupMemberId, function(err, obj){
+                      console.log("count"+count);
+                      if(!count--)
+                        callback(null,deleteNumber);
+                    });
                   });
                 });
                 if(!length) callback(null,deleteNumber);
@@ -470,11 +472,13 @@ PeopleTree.prototype.deleteNode = function(groupMemberId, f) {
                 console.log('item.length : '+length);
                 var count = length-1;
 
-                items.forEach(function (childGroupid) {
-                  tree.lset("L/"+childGroupid, 1, childGroupid, function(err,obj){
-                    console.log("count"+count);
-                    if(!count--)
-                      callback(null,deleteNumber);
+                items.forEach(function (childGroupMemberId) {
+                  tree.lset("L/"+childGroupMemberId, 1, childGroupMemberId, function(err,obj){
+                    tree.hset('H/'+childGroupMemberId, 'parentGroupMemberId', childGroupMemberId, function(err, obj){
+                      console.log("count"+count);
+                      if(!count--)
+                        callback(null,deleteNumber);
+                    });
                   });
                 });
                 if(!length) callback(null,deleteNumber);
@@ -1316,114 +1320,52 @@ PeopleTree.prototype.broadcastDown = function(groupMemberId, depth, message, f) 
 //groupMemberId의 부모로 시작해서 depth 아래의 자식 모두에게 푸시를 준다.
 //자식 들을 일단 모으고 
 
-    peopleTree.gatherChildren(groupMemberId, depth, function(err,children){
-        if(!err){
-          children.forEach(function (childGroupid) {
-            peopleTree.push(groupMemberId, childGroupid, message, 300, function(err,result){
-              if(err) console.log(err.message);
-            });
+  peopleTree.gatherChildren(groupMemberId, depth, function(err,children){
+      if(!err){
+        children.forEach(function (childGroupMemberId) {
+          peopleTree.push(groupMemberId, childGroupMemberId, message, 300, function(err,result){
+            if(err) console.log(err.message);
           });
-          return f(null);
-        }
-        else return f(err);
-    });
+        });
+        return f(null);
+      }
+      else return f(err);
+  });
 }
 
 PeopleTree.prototype.gatherChildren = function(groupMemberId, depth, f) {
-        global.gatherArr = [];
-        global.gatherChildrenCall = 0;
 
-        gatherChildrenCall++;
-        console.log("root callNumber1 : "+ gatherChildrenCall);
+  var startIndex=-1;
+  var endIndex=0;
+  var gatherArr=[];
 
-        peopleTree.gatherChildrenSub(groupMemberId, depth, function(obj){
-          console.log("root callNumber2 : "+ gatherChildrenCall);
-          if(gatherChildrenCall==0) return f(null, gatherArr);
-        });
-}
+  var _groupMemberId = groupMemberId;
 
-PeopleTree.prototype.gatherChildrenSub = function(groupMemberId, depth, f) {
+  async.whilst(function () {
+    return (startIndex <= endIndex) && depth;
+  },
+  function (next) {
 
-    async.waterfall([
-      function(callback) {
-        console.log('--- async.waterfall #1 ---');
-        console.log("gatherChildrenCall : "+ gatherChildrenCall);
-        callback(null, groupMemberId, f);
-      },
+    peopleTree.getChildren(_groupMemberId,function(err, childrenArray, length){
+      depth--;
+      console.log("childrenArray"+ JSON.stringify(childrenArray));
 
-      function(popGroupId, f, callback) {
+      endIndex += length-1;
 
-        console.log('--- async.waterfall #2 ---');
-        tree.lrange('L/'+popGroupId, 2, -1, function (err, items) {
-          console.log('item.length : '+items.length);
-          if(depth > 0){
-            items.forEach(function (childGroupid) {
+      _.each(childrenArray, function (item) {
+          gatherArr.push(item);
+      });
+      console.log("gatherArr"+ JSON.stringify(gatherArr));
 
-              gatherArr.push(parseInt(childGroupid));
-              gatherChildrenCall++;
+      _groupMemberId = gatherArr[++startIndex];
 
-              peopleTree.gatherChildrenSub(childGroupid, depth-1, f);
+      next();
 
-            });
-          }
-          callback(null, f);
-        });
-      }
-    ],
-    function(err, f) {
-      console.log('--- async.waterfall result #1 ---');
-      gatherChildrenCall--;
-      console.log("result gatherChildrenCall : "+ gatherChildrenCall);
-      if(gatherChildrenCall==0) return f(null,gatherArr);
     });
-}
-
-PeopleTree.prototype.showTree = function(rootGroupMemberId, position, index, f) {
-
-    async.waterfall([
-
-      function(callback) {
-        console.log('--- async.waterfall #1 ---');
-        console.log(JSON.stringify(treeJson));
-
-        console.log("callNumber : "+ callNumber);
-
-        position = position[index].children;
-        callback(null, position, rootGroupMemberId, f);
-      },
-
-      function(position, popGroupId, f, callback) {
-        console.log('--- async.waterfall #2 ---');
-        tree.lrange('L/'+popGroupId, 2, -1, function (err, items) {
-
-          if (err) console.log("err : "+err.message);
-
-          var count = 0;
-          console.log('item.length : '+items.length);
-          items.forEach(function (childGroupid) {
-
-            console.log("items.length : "+items.length);
-            console.log("childGroupid "+count+" : "+childGroupid);
-           
-            position.push({id : parseInt(childGroupid), children:[]});
-
-            callNumber++;
-
-            peopleTree.showTree(childGroupid, position, count, f);
-
-            count++;
-          });
-          callback(null, f);
-        });
-      }
-    ],
-
-    function(err, f) {
-      console.log('--- async.waterfall result #1 ---');
-      callNumber--;
-      console.log("result callNumber : "+ callNumber);
-      if(callNumber==0) return f(treeJson);
-    });
+  },
+  function (err) {
+    return f(gatherArr);
+  });
 }
 
 PeopleTree.prototype.getChildren = function(groupMemberId, f) {
@@ -1444,5 +1386,54 @@ PeopleTree.prototype.getChildren = function(groupMemberId, f) {
       else return f(err.message,null,null);
     });
 }
+
+PeopleTree.prototype.showTree = function(rootGroupMemberId, position, index, f) {
+
+    async.waterfall([
+
+      function(callback) {
+        console.log('--- async.waterfall #1 ---');
+        console.log(JSON.stringify(treeJson));
+
+        console.log("callNumber : "+ callNumber);
+
+        position = position[index].children;
+        callback(null, position, rootGroupMemberId, f);
+      },
+
+      function(position, popGroupMemberId, f, callback) {
+        console.log('--- async.waterfall #2 ---');
+        tree.lrange('L/'+popGroupMemberId, 2, -1, function (err, items) {
+
+          if (err) console.log("err : "+err.message);
+
+          var count = 0;
+          console.log('item.length : '+items.length);
+          items.forEach(function (childGroupMemberId) {
+
+            console.log("items.length : "+items.length);
+            console.log("childGroupMemberId "+count+" : "+childGroupMemberId);
+           
+            position.push({id : parseInt(childGroupMemberId), children:[]});
+
+            callNumber++;
+
+            peopleTree.showTree(childGroupMemberId, position, count, f);
+
+            count++;
+          });
+          callback(null, f);
+        });
+      }
+    ],
+
+    function(err, f) {
+      console.log('--- async.waterfall result #1 ---');
+      callNumber--;
+      console.log("result callNumber : "+ callNumber);
+      if(callNumber==0) return f(treeJson);
+    });
+}
+
 
 module.exports = PeopleTree;

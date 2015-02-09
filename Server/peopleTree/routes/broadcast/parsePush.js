@@ -3,12 +3,12 @@ var router = express.Router();
 
 /*
 #위쪽으로, 관리자에게 푸시 보내기(이탈자 알림용, 내부용)
-#path : POST /ptree/broadcast/Up
+#path : POST /ptree/broadcast/up
 #req : int groupMemberId, int accumulateWarning, string message
 #res : int[] parents
 #e.g : {"status":200,"responseData":{"parents":[27,20]}}
 */
-router.get('/Up',function(req,res){
+router.get('/up',function(req,res){
 
     var groupMemberId = req.query.groupMemberId;
     var accumulateWarning = req.query.accumulateWarning;
@@ -22,12 +22,12 @@ router.get('/Up',function(req,res){
 
 /*
 #아래쪽으로, 관리대상에게 푸시 보내기(공지사항 알림용)
-#path : POST /ptree/broadcast/Up
-#req : int groupMemberId, int accumulateWarning, string message
+#path : POST /ptree/broadcast/down
+#req : int groupMemberId, int depth, string message
 #res : int[] child
 #e.g : {"status":200,"responseData":{"children":[26,27]}}
 */
-router.get('/Down',function(req,res){
+router.get('/down',function(req,res){
 
     var groupMemberId = req.query.groupMemberId;
     var depth = req.query.depth;

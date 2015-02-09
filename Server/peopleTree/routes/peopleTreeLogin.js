@@ -14,21 +14,14 @@ var async = require('async');
 
 router.get('/', function(req, res) {
 
-	var userPhoneNumber = req.query.userPhoneNumber;
-    var userId = req.query.userId;
+	var userIdOrPhone = req.query.userIdOrPhone;
     var password = req.query.password;
 
-	if( password == undefined || (userId == undefined && userPhoneNumber == undefined)){
+	if( password == undefined || userIdOrPhone == undefined){
 		res.json({status:300, errorDesc : "parameter Error"});
 	}
-	else if(userPhoneNumber == undefined){
-		userPhoneNumber = 0;
-	}
-	else if(userId == undefined){
-		userId = 0;
-	}
 
-    var loginData = [userId,userPhoneNumber,password];
+    var loginData = [userIdOrPhone,userIdOrPhone,password];
     console.log("loginData : " + loginData);
     async.waterfall([
 		  function(callback) {

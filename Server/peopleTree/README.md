@@ -7,7 +7,7 @@ groupMemberId는 userNumber
 
 #manageMode는 200은 nothing, 210은 트레킹 모드, 220 지역모드, 230은 지오펜스모드, 300은 실내 모드
 
-state
+status
 200 // 정상
 300 // 그냥 범용 에러
 404 // Not found

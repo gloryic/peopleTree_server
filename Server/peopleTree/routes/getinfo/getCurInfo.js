@@ -37,13 +37,13 @@ router.get('/group/member',function(req,res){
 	var data, data2, longitude, latitude;
 	var queryString="";
 	
-	var userNumber = req.query.userNumber;
+	var groupMemberId = req.query.groupMemberId;
 
-	if(userNumber == undefined){
+	if(groupMemberId == undefined){
 		res.json({status:300});
 	}
 	else{
-		queryString = 'SELECT 1 FROM idinfo WHERE userNumber='+"'"+userNumber+"'";
+		queryString = 'SELECT 1 FROM idinfo WHERE userNumber='+"'"+groupMemberId+"'";
 	}
 
 	console.log(queryString);
@@ -56,7 +56,7 @@ router.get('/group/member',function(req,res){
         else{
             if(rows.length == 1){
             	//로그인 상태라면 메모리에서 값을 읽어온다.
-				peopleTree.getItems(userNumber,function(err,obj){
+				peopleTree.getItems(groupMemberId,function(err,obj){
 					if(!err){
 						if(obj){
 							console.log(obj.userName);

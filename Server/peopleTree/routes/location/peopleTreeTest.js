@@ -265,4 +265,23 @@ router.get('/affectAllParents', function(req, res) {
 });
 
 
+router.get('/gatherChildren', function(req, res) {
+
+	var groupMemberId = req.query.groupMemberId;
+	var depth = req.query.depth;
+
+	peopleTree.gatherChildren(groupMemberId, depth, function(err,obj){
+
+		if(!err){
+			console.log("/gatherChildren : "+ JSON.stringify(obj));
+			res.json(obj);
+		}
+		else{
+			res.json(err);
+		}
+	});
+});
+
+
+
 module.exports = router;
