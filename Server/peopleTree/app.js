@@ -77,7 +77,7 @@ var dbConfig = {
 };
 
 var APP_ID = 'sDGocHwgCiClL6qWbc2sOZzDbHtg6JCWWmhGZWIj';
-var MASTER_KEY = 'wo7Pvg1UU4eHjkgFEhxO9VfoY9klIEbt0bKF7gGO';
+var MASTER_KEY = 'duCyKVemL81eRxYzCrvrdGlIHUDFuNFIoTH9Idma';
 global.parse = new Parse(APP_ID, MASTER_KEY);
 
 

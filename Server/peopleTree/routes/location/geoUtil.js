@@ -189,7 +189,64 @@ var edgeType = req.query.edgeType;
 	});
 });
 
-//모드변경 프로토콜, 직계자식들에게 모두 푸시 알림
+/*
+#모드변경 프로토콜, 직계자식들에게 모두 푸시 알림
+#path : GET /ptree/geoutil/changeManageMode
+#req : int groupMemberId, int manageMode
+#res : 
+#e.g : {"status":200,"reponseData":"210 manageMode change success"}
+*/
 
+router.get('/changeManageMode',function(req,res){
+
+    var groupMemberId = req.query.groupMemberId;
+    var manageMode = req.query.manageMode;
+
+	async.waterfall([
+
+        function (callback) {
+          console.log('--- async.waterfall changeManageMode #1 ---');
+      	   peopleTree.isExist(groupMemberId, function(err, isExist){
+			  if(!err){
+				  if(isExist) callback(null);
+				  else callback("is not exist groupMemberId",null);
+			  }
+			  else callback(err,null);
+		  });
+        },
+        function (callback) {
+          console.log('--- async.waterfall changeManageMode #2 ---');
+          	peopleTree.changeManageMode(groupMemberId, manageMode, function(err,result){
+				if(!err){
+					if(result) callback(null);
+					else callback("change fail");
+				}
+				else callback(err,null);
+			});
+        },
+        function (callback) {
+          console.log('--- async.waterfall changeManageMode #2 ---');
+          	peopleTree.getChildren(groupMemberId, function(err, children, length){
+				if(!err){
+				  children.forEach(function (childGroupMemberId) {
+				        peopleTree.push(groupMemberId, childGroupMemberId, "부모의 관리모드가 변경되었습니다.", manageMode, function(err,result){
+				          if(err) console.log(err.message);
+				        });
+			      });
+			      callback(null);
+				}
+				else callback(err,null);
+			});
+        }
+      ],
+      function(err) {
+        console.log('--- async.waterfall result checkMember #1 ---');
+        if(!err)
+          res.json({status:200, reponseData : manageMode+" manageMode change success"});
+        else
+          res.json({status:300, reponseData : err});
+	});
+
+});
 
 module.exports = router;

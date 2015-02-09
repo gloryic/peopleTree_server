@@ -584,7 +584,7 @@ PeopleTree.prototype.isRoot = function(groupMemberId, f) {
 PeopleTree.prototype.changeManageMode = function(groupMemberId, manageMode, f) {
   tree.hset('H/'+groupMemberId, 'manageMode', manageMode, function(err, updateNumber){
     if(!err){
-        return f(null, 0);
+        return f(null, true);
     }
     else
       return f(err.message, null);
@@ -1259,7 +1259,8 @@ PeopleTree.prototype.push = function(from, to, message, statusCode, f) {
                                 };
 
             parse.sendPush(notification, function(err, resp){
-              console.log("to : "+ to+" / "+resp.result);
+              console.log("to : "+ to+" / "+JSON.stringify(resp));
+              
               if(!err) return f(null,resp.result);
               else return f(err,null)
             });
@@ -1327,7 +1328,7 @@ PeopleTree.prototype.broadcastDown = function(groupMemberId, depth, message, f) 
             if(err) console.log(err.message);
           });
         });
-        return f(null);
+        return f(null,children);
       }
       else return f(err);
   });
@@ -1364,7 +1365,7 @@ PeopleTree.prototype.gatherChildren = function(groupMemberId, depth, f) {
     });
   },
   function (err) {
-    return f(gatherArr);
+    return f(null,gatherArr);
   });
 }
 

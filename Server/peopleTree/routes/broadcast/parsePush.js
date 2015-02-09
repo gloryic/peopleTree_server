@@ -14,8 +14,16 @@ router.get('/up',function(req,res){
     var accumulateWarning = req.query.accumulateWarning;
     var message = req.query.message;
 
-    peopleTree.broadcastUp(groupMemberId, accumulateWarning, message, function(err,result){
-        if(!err) res.json({status:200, responseData : {parents : result}});
+    peopleTree.isExist(groupMemberId, function(err, isExist){
+        if(!err){
+            if(isExist){
+                peopleTree.broadcastUp(groupMemberId, accumulateWarning, message, function(err,result){
+                    if(!err) res.json({status:200, responseData : {parents : result}});
+                    else res.json({status:300, errorDesc : err});
+                });
+            }
+            else res.json({status:300, errorDesc : "not login groupMemberId"});
+        }
         else res.json({status:300, errorDesc : err});
     });
 });
@@ -33,8 +41,16 @@ router.get('/down',function(req,res){
     var depth = req.query.depth;
     var message = req.query.message;
     
-    peopleTree.broadcastDown(groupMemberId, depth, message, function(err){
-        if(!err) res.json({status:200, responseData : {children : gatherArr}});
+    peopleTree.isExist(groupMemberId, function(err, isExist){
+        if(!err){
+            if(isExist){
+                peopleTree.broadcastDown(groupMemberId, depth, message, function(err,children){
+                    if(!err) res.json({status:200, responseData : {children : children}});
+                    else res.json({status:300, errorDesc : err});
+                });
+            }
+            else res.json({status:300, errorDesc : "not login groupMemberId"});
+        }
         else res.json({status:300, errorDesc : err});
     });
 });
