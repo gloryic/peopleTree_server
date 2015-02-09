@@ -36,4 +36,23 @@ router.get('/allChildren',function(req,res){
     });
 });
 
+/*
+#그룹을 나간다. 내가 최상위 루트가 된다.
+#path : GET /ptree/group/out
+#req : int groupMemberId
+#res : 
+#e.g : {"status":200,"responseData":"outGroup success"}
+*/
+router.get('/out',function(req,res){
+
+    var groupMemberId = req.query.groupMemberId;
+
+    peopleTree.outGroup(groupMemberId, function(err,result){
+        if(!err) res.json({status:200, responseData : "outGroup success"});
+        else res.json({status:300, errorDesc : err});
+    });
+});
+
+
+
 module.exports = router;

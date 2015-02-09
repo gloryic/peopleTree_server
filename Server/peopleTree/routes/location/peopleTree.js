@@ -102,7 +102,6 @@ PeopleTree.prototype.insertNode = function(userNumber, f) {
 
 PeopleTree.prototype.getItems = function(groupMemberId, f) {
     tree.hgetall("H/"+groupMemberId, function(err,obj){
-        console.log("getItems_hgetall : " + JSON.stringify(obj));
         if(!err)
           return f(null,obj);
         else
@@ -164,7 +163,6 @@ PeopleTree.prototype.changeParent = function(groupMemberId, parentGroupMemberId,
         function (callback) {
           console.log('--- async.waterfall changeParent #1 ---');
             tree.hgetall("H/"+groupMemberId, function(err,myData){
-              console.log("myData : " + JSON.stringify(myData));
               if(!err){
                 if(myData!=null){
                   callback(null,myData);
@@ -181,7 +179,6 @@ PeopleTree.prototype.changeParent = function(groupMemberId, parentGroupMemberId,
           console.log('--- async.waterfall changeParent #2 ---');
           //붙을려는 부모가 이미 내 부모인지 
           tree.hgetall("H/"+parentGroupMemberId, function(err,parentData){
-            console.log("parentData : " + JSON.stringify(parentData));
             if(!err){
                 if(parentData!=null){
 
@@ -365,6 +362,89 @@ PeopleTree.prototype.setManageNumber = function(groupMemberId, managingTotalNumb
     else
       return f(err);
   });
+}
+
+PeopleTree.prototype.outGroup = function(groupMemberId, f) {
+
+      async.waterfall([
+
+        function (callback) {
+          console.log('--- async.waterfall outGroup #1 ---');
+          //내 정보가져오기
+            tree.hgetall("H/"+groupMemberId, function(err,myData){
+              if(!err){
+                if(myData!=null){
+                  callback(null,myData);
+                }
+                else
+                  callback("not found that Data about groupMemberId",null);
+              }
+              else
+                callback(error.message,null);
+            });
+        },
+
+        function (myData, callback) {
+          console.log('--- async.waterfall outGroup #2 ---');
+          console.log("groupMemberId != myData.parentGroupMemberId / "+ groupMemberId +" != "+ myData.parentGroupMemberId);
+          //부모가 있다면 원래 부모에서 나를 제거한다.
+          if(groupMemberId != myData.parentGroupMemberId){
+            tree.lrem("L/"+myData.parentGroupMemberId, -1, groupMemberId, function(err, deleteNumber){
+              if(!err)
+                callback(null,myData);
+              else
+                callback(err.message,null);
+            });
+          }
+          else//부모가 없다면 안한다.
+            callback("iam not have parent",null);
+        },
+
+        function (myData, callback) {
+          console.log('--- async.waterfall outGroup #3 ---');
+          //부모가 바뀌기전 부모의 관리 인원 정보를 업데이트.
+          //내가 관리하고 있는 전체 인원의 수+1을 뺀다 
+          peopleTree.affectAllParents(groupMemberId, -1*(parseInt(myData.managingTotalNumber)+1), false, function(err,result){
+            if(!err)
+              callback(null);
+            else
+              callback(err.message,null);
+          });
+        },
+
+        function (callback) {
+          console.log('--- async.waterfall outGroup #4 ---');
+          //나의 해시 테이블 수정
+          //1. 나의 부모를 변경
+          //2. 나의 그룹 아이디를 변경
+          var items = {groupId:0, parentGroupMemberId:groupMemberId};
+          tree.hmset("H/"+groupMemberId, items, function(err,obj){
+            if(!err)
+              callback(null);
+            else
+              callback(err.message,null);
+          });
+        },
+
+        function (callback) {
+          console.log('--- async.waterfall outGroup #5 ---');
+          //리스트에서 나의 부모를 나로 변경
+          tree.lset("L/"+groupMemberId,1,groupMemberId,function(err,obj){
+            if(!err)
+              callback(null);
+            else
+              callback(err.message,null);
+          });
+        }
+      ],
+
+      function(err) {
+        console.log('--- async.waterfall result insertNode #1 ---');
+        if(!err)
+          return f(null)
+        else
+          return f(err,null)
+      });
 }
 
 PeopleTree.prototype.deleteNode = function(groupMemberId, f) {

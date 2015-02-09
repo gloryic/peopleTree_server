@@ -15,8 +15,10 @@ var router = express.Router();
 //410 - 아래, 내 밑으로 들어와라, edgeType(100), 420 - 내 밑으로 들어와라 edgeType(200)
 //510 - 위, 저를 받아주세요, edgeType(100), 520 - 저를 받아주세요 edgeType(200)
 
-var requestMessage = {410 : "아래, 정보보고 관계를 요청하셨습니다.", 420 : "아래, 위치관리관계 요청하셨습니다.", 510 : "위, 정보보고관계 요청하셨습니다.", 520 : "위, 위치관리관계 요청하셨습니다."}
+var requestMessage = {410 : "아래, 정보보고 관계를 요청이 왔습니다..", 420 : "아래, 위치관리관계 요청이 왔습니다.", 510 : "위, 정보보고관계 요청이 왔습니다.", 520 : "위, 위치관리관계 요청이 왔습니다."}
+
 var confirmMessage = {415 : "아래, 정보보고 관계를 수락하셨습니다.", 425 : "아래, 위치관리관계 확인하셨습니다.", 515 : "위, 정보보고관계 확인하셨습니다.", 525 : "위, 위치관리관계 확인하셨습니다."}
+var infoMessage = {417 : "관리자가 변동 되었습니다.", 427 : "관리자가 변동 되었습니다.", 517 : "관리대상이 추가되었습니다.", 527 : "관리대상이 추가되었습니다."}
 
 router.get('/request/edge',function(req,res){
 
@@ -40,6 +42,9 @@ router.get('/request/edge',function(req,res){
 #res :  int from, int to, int statusCode, string message
 #e.g : {"status":200,"responseData":{"from":20,"to":41,"statusCode":420,"message":"confirm requset"}}
 */
+
+global.adminGroupMemberId = 26;
+
 router.get('/make/edge',function(req,res){
 
     var from = parseInt(req.query.from); // 확인자
@@ -59,21 +64,31 @@ router.get('/make/edge',function(req,res){
 			groupMemberId = from;
 			parentGroupMemberId= to;
 			statusCode == 410 ? edgeType = 100 :edgeType = 200;
+			statusCode += 5;
 		}
 		else if (statusCode==510 || statusCode==520){
 			//확인자가 위로 들어가는 것을 확인
 			groupMemberId = to;
 			parentGroupMemberId= from;
-			statusCode == 410 ? edgeType = 100 :edgeType = 200;	
+			statusCode == 410 ? edgeType = 100 :edgeType = 200;
+			statusCode += 5;
 		}
 
 		peopleTree.changeParent(groupMemberId, parentGroupMemberId, function(err,result){
 			if(!err&&result.status==200){
 				peopleTree.changeEdgeType(groupMemberId, edgeType, function(err, result){
+
 				    peopleTree.push(from, to, confirmMessage[statusCode], statusCode, function(err,result){
 				      if(err || !result) console.log("ERR /make/edge : "+err+"/"+result);
 				    });
 				    res.json({status:200, responseData : { from : parseInt(from), to : parseInt(to), statusCode: parseInt(statusCode), message :"confirm requset" } });
+
+				    //피플트리가 확인자에게도 푸시를 준다.
+				    peopleTree.push(adminGroupMemberId, from, infoMessage[statusCode+2], statusCode+2, function(err,result){
+				      if(err || !result) console.log("ERR /make/edge : "+err+"/"+result);
+				    });
+				    res.json({status:200, responseData : { from : parseInt(from), to : parseInt(to), statusCode: parseInt(statusCode), message :"confirm requset" } });
+				
 				});
 			}
 			else
