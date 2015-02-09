@@ -3,7 +3,7 @@ var router = express.Router();
 var request = require('request');
 var url = require('url');
 var async = require('async');
-
+var mysql = require('mysql');
 /*
 #로그인하기
 #path : GET /ptree/login
@@ -14,8 +14,8 @@ var async = require('async');
 
 router.get('/', function(req, res) {
 
-	var userIdOrPhone = req.query.userIdOrPhone;
-    var password = req.query.password;
+	var userIdOrPhone = mysql.escape(req.query.userIdOrPhone).replace(/'/g,'');
+    var password = mysql.escape(req.query.password).replace(/'/g,'');
 
 	if( password == undefined || userIdOrPhone == undefined){
 		res.json({status:300, errorDesc : "parameter Error"});

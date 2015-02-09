@@ -1387,6 +1387,7 @@ PeopleTree.prototype.getChildren = function(groupMemberId, f) {
     });
 }
 
+//비공개 함수, 전역 변수를 사용하기에 동시 사용시 문제가 생긴다.
 PeopleTree.prototype.showTree = function(rootGroupMemberId, position, index, f) {
 
     async.waterfall([
