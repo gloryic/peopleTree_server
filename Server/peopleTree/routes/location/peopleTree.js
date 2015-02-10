@@ -941,6 +941,73 @@ PeopleTree.prototype.checkLocation = function(groupMemberId, parentGroupMemberId
     return f(null, {status:200, responseData : "manageMode is 200(nothing Mode)"});
 }
 
+
+PeopleTree.prototype.checkInvalidLocation = function(groupMemberId, parentGroupMemberId,f) {
+
+  async.waterfall([
+      //나의 edgeStatus를 가져온다
+      function(callback){
+        console.log('--- async.waterfall checkInvalidLocation Node #1 ---');
+        tree.hget("H/"+groupMemberId,'edgeStatus',function(err,edgeStatus){
+          console.log("edgeStatus : "+edgeStatus);//값 하나만 가져온다. 키 없이 값만
+          if(!err)
+            callback(null,parseInt(edgeStatus));
+          else
+            callback({status:400, errorDesc: err.message},null);
+        });
+      },
+
+      function(edgeStatus, callback){
+        console.log('--- async.waterfall checkInvalidLocation Node #2 ---');
+        //300이 아닐시 300으로 변경한다.
+        if(edgeStatus!=300){
+          peopleTree.changeEdgeStatus(groupMemberId, 300, function(err, updateNumber){
+            if(!err)
+              callback(null, edgeStatus);
+            else
+              callback({status:400, errorDesc: err}, null);
+          });
+        }
+        else
+          callback(null, edgeStatus);
+      },
+
+      function(edgeStatus, callback){
+        console.log('--- async.waterfall checkInvalidLocation Node #3 ---');
+        //부모의 관리 인원 중 나를 감소시킨다.
+        if(edgeStatus!=300){
+          peopleTree.affectAllParents(groupMemberId, -1, true, function(err,result){
+            if(!err) callback(null);
+            else callback({status:400, errorDesc: err}, null);
+          });
+        }
+        else
+          callback(null, radius, distance);        
+      },
+
+      function(callback){
+        console.log('--- async.waterfall checkInvalidLocation Node #7 ---');
+        peopleTree.accumulateWarning(groupMemberId, false, function(err,accumulateWarning){
+          if(!err)
+            callback(null, {edgeStatus: 300, validation : false, accumulateWarning : accumulateWarning});
+          else
+            callback({status:400, errorDesc: err}, null);
+        });
+      },
+  ],
+
+  function(err, results) {
+    console.log('--- async.waterfall result checkInvalidLocation Node #1 ---');
+    console.log(arguments);
+    if(!err)
+      return f(null,results)
+    else{
+      return f(err, null)
+    }
+
+  });
+}
+
 PeopleTree.prototype.checkTrackingModeAndAreaMode = function(groupMemberId, parentGroupMemberId, manageMode, f) {
   console.log("checkTrackingMode");
   //부모의 현재 위치와 나의 위치 거리가 부모가 설정한 반경 안에 있어야한다.
@@ -1351,7 +1418,8 @@ PeopleTree.prototype.push = function(from, to, message, statusCode, f) {
           return f(err.message,null);
       });
     }
-    else f("to user not login",null);
+    else
+      f("to user not login",null);
   });
 }
 

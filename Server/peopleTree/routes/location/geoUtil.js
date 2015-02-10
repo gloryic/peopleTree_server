@@ -115,7 +115,7 @@ router.get('/checkLocation', function(req, res) {
 #path : POST /ptree/location/checkMember
 #req : int groupMemeberId, int statusCode, double latitude, double longtitude, int fpId, int parentGroupMemberId, int parentManageMode, int edgyType
 #res : 
-#e.g : 
+#e.g : {"status":200,"reponseData":{"radius":4,"distance":220732.02658609525,"edgeStatus":300,"validation":false,"accumulateWarning":1}}
 
 statusCode
 공지메세지 - 100
@@ -133,12 +133,13 @@ router.get('/checkMember', function(req, res) {
 //statusCode에 따라서 디바이스 상태를 알고 부모에게 푸시를 준다.
 
 var groupMemberId = req.query.groupMemberId;
-var statusCode = req.query.statusCode;
 var latitude = req.query.latitude;
 var longitude = req.query.longitude;
-
 var parentGroupMemberId = req.query.parentGroupMemberId;
 var manageMode = req.query.parentManageMode;
+
+
+var statusCode = req.query.statusCode;
 var edgeType = req.query.edgeType;
 
 //var fpId = req.query.fpId;
@@ -146,29 +147,86 @@ var edgeType = req.query.edgeType;
 /*
 2048 정상
 2049 무효값
+
 2050 gps꺼짐
-2052  wifi 꺼짐
+2052 wifi 꺼짐
+
 2056 배터리부족
 2064 전원 꺼짐
 */
+//정보보고관계라 하여도 디바이스 상태는 파악하나? 위 디바이스 상태가 위치 정보를 줄 수 있느냐를 파악 하는 거라
+//정보보고관계는 이 프로토콜을 사용하지 않는다.
+var message = '';
+var isCheckLocation = true;
+var isLocationInvaild = false;
+
 	async.waterfall([
+		
+		function (callback) {
+          console.log('--- async.waterfall checkMember #1 ---');
+          //기기의 statusCode에 따라 프로세스가 진행되고 부모에게 알림이 간다.
+
+          if(edgeType==100){
+          	isCheckLocation = false;
+          }
+
+          if (statusCode == 2048)
+          	callback(null);
+          else{
+          	if(parseInt(statusCode&2049) == 2049){
+          		console.log(statusCode&2049);
+          		message += '(gps 오차 큼)';
+          		isLocationInvaild = true;
+          	}
+          	if(parseInt(statusCode&2050) == 2050){
+          		console.log(statusCode&2050);
+          		message += '(gps 꺼짐)';
+          		isLocationInvaild = true;
+          	}
+          	if(parseInt(statusCode&2052) == 2052){
+          		message += '(wifi 꺼짐)';
+          		isLocationInvaild = true;
+          	}
+          	if(parseInt(statusCode&2056) == 2056){
+          		message += '(배터리 부족)';
+          	}
+          	if(parseInt(statusCode&2064) == 2064){
+          		message += '(전원 끔)';
+          	}
+          }
+          
+          if(statusCode!=2048){
+			    peopleTree.push(groupMemberId, parentGroupMemberId, message, statusCode, function(err,result){
+			    	if(!err) console.log(err);
+		        });
+		  }
+		  console.log("device status : " + message);
+		  callback(null);
+        },
 
         function (callback) {
-          console.log('--- async.waterfall checkMember #1 ---');
+          console.log('--- async.waterfall checkMember #2 ---');
           //setLocation
-      	  peopleTree.setLocation(groupMemberId, latitude, longitude, function(err,result){
-			  if(!err){
-				  console.log("/setLocation : "+ result);
-				  if(result) callback(null);
-				  else callback({status:400, errorDesc:"location update failed"},null);
-			  }
-			  else
-				  callback(err,null);
-		  });
+          if(isCheckLocation && !isLocationInvaild){
+
+	      	  peopleTree.setLocation(groupMemberId, latitude, longitude, function(err,result){
+				  if(!err){
+					  console.log("/setLocation : "+ result);
+					  if(result) callback(null);
+					  else callback({status:400, errorDesc:"location update failed"},null);
+				  }
+				  else
+					  callback(err,null);
+			  });
+	      	}
+	      else{
+	      	callback(null);
+	      }
         },
         function (callback) {
-          console.log('--- async.waterfall checkMember #2 ---');
+          console.log('--- async.waterfall checkMember #3 ---');
           //checkLocation
+          if(isCheckLocation && !isLocationInvaild){
           	peopleTree.checkLocation(groupMemberId, parentGroupMemberId, manageMode, function(err,result){
 				if(!err){
 					console.log("/checkLocation : "+ JSON.stringify(result));
@@ -178,6 +236,36 @@ var edgeType = req.query.edgeType;
 					callback(err,null);
 				}
 			});
+          }
+          else if(isCheckLocation) {
+	      	  peopleTree.checkInvalidLocation(groupMemberId, parentGroupMemberId, function(err,result){
+				  if(!err){
+					  console.log("/checkInvalidLocation : "+ result);
+					  if(result) callback(null,result);
+					  else callback({status:400, errorDesc:"Invalid Location process failed"},null);
+				  }
+				  else
+					  callback(err,null);
+			  });
+          }
+          else
+          	callback(null, null);
+        },
+        function (result, callback) {
+          console.log('--- async.waterfall checkMember #4 ---');
+          	//관리대상의 엣지타입이 위치관리 관계일때 검사를 하고 이탈자일때 푸시를 보낸다.
+	        //{"status":200,"reponseData":{"radius":4,"distance":220732.02658609525,"edgeStatus":300,"validation":false,"accumulateWarning":1}}
+	        // reponseData.validation 이 false 이면 reponseData를 푸시알림으로 부모에게 보낸다.
+          	if(isCheckLocation){
+          		if(!result.validation){
+		      		peopleTree.push(groupMemberId, parentGroupMemberId, result, statusCode, function(err,result){
+			          if(err) console.log(err.message);
+			        });
+		      	}
+		      	callback(null,result);
+	      	}
+	      	else
+	      		callback(null,{reponseData:{edgeStatus:100}});
         }
       ],
       function(err, results) {

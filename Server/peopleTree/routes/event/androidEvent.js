@@ -84,7 +84,7 @@ router.get('/make/edge',function(req,res){
 				    res.json({status:200, responseData : { from : parseInt(from), to : parseInt(to), statusCode: parseInt(statusCode), message :"confirm requset" } });
 
 				    //피플트리가 확인자에게도 푸시를 준다.
-				    peopleTree.push(adminGroupMemberId, from, infoMessage[statusCode+2], statusCode+2, function(err,result){
+				    peopleTree.push(to, from, infoMessage[statusCode+2], statusCode+2, function(err,result){
 				      if(err || !result) console.log("ERR /make/edge : "+err+"/"+result);
 				    });
 				    res.json({status:200, responseData : { from : parseInt(from), to : parseInt(to), statusCode: parseInt(statusCode), message :"confirm requset" } });

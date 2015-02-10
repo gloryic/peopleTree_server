@@ -137,12 +137,12 @@ http://210.118.74.107:3000/ptree/make/group?userPhoneNumber=01011113333&userId=j
 	"edgeStatus":200, // 100 - nothing, 200 - 정상, 300 - 비정상
 	"edgeType" : 100, // 100 - 정보 보고 관계, 200 - 위치 관리 관계 
 	"manageMode":200, // 200 - nothing 모드, 210 - 트레킹 모드, 220 - 지역모드, 230 - 지오펜스모드
-    "managedLocationRadius":0,
-    "latitude":"null",
-    "longitude":"null",
+  "managedLocationRadius":0,
+  "latitude":"null",
+  "longitude":"null",
 	"managingTotalNumber":0,
-    "managingNumber":0,
-    "accumulateWarning":0
+  "managingNumber":0,
+  "accumulateWarning":0
 }
 
 ## "L/그룹멤버아이디" 로 리스트 생성 트리 구조관리

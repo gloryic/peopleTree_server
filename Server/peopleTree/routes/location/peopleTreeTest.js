@@ -283,5 +283,23 @@ router.get('/gatherChildren', function(req, res) {
 });
 
 
+router.get('/checkInvalidLocation', function(req, res) {
+
+	var groupMemberId = req.query.groupMemberId;
+	var parentGroupMemberId = req.query.parentGroupMemberId;
+
+	peopleTree.checkInvalidLocation(groupMemberId, parentGroupMemberId, function(err,obj){
+
+		if(!err){
+			console.log("/gatherChildren : "+ JSON.stringify(obj));
+			res.json(obj);
+		}
+		else{
+			res.json(err);
+		}
+	});
+});
+
+
 
 module.exports = router;
