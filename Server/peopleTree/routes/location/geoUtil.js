@@ -4,7 +4,7 @@ var router = express.Router();
 
 /*
 #참조 지역 정보 입력하기
-#path : POST /ptree/location/setGeoPoint
+#path : POST /ptree/geoutil/setGeoPoint
 #req : int groupMemberId, double radius, Obj[] points
 #res : int status, string responseData
 #e.g : {"status":200,"responseData":"points's length * 2 + 1 = 5"}
@@ -13,23 +13,86 @@ router.get('/setGeoPoint', function(req, res) {
 
 	var groupMemberId = req.query.groupMemberId;
 	var radius = req.query.radius;
-	var points = req.query.points;// [{lat:7,lng:4}];
+	var points = JSON.parse(req.query.points);// [{lat:7,lng:4}];
+	var manageMode = 0;
 
-	peopleTree.setGeoPoint(groupMemberId, radius, points, function(err,obj){
-		if(!err){
-			console.log("/setGeoPoint : "+ JSON.stringify(obj));
-			res.json({status:200, responseData : "points's length * 2 + 1 = "+ obj });
-		}
-		else{
-			res.json({status:300, errorDesc : err.message });
-		}
+	console.log("points : "+JSON.stringify(points));
+	console.log("points.length : "+points.length);
+
+	if(points.length == 0)
+	    manageMode = 210;
+	else if(points.length == 1)
+		manageMode = 220;
+	else
+		manageMode = 230;
+
+	console.log("manageMode : "+manageMode);
+
+	async.waterfall([
+
+        function (callback) {
+          console.log('--- async.waterfall setGeoPoint #1 ---');
+      	   peopleTree.isExist(groupMemberId, function(err, isExist){
+			  if(!err){
+				  if(isExist) callback(null);
+				  else callback("is not exist groupMemberId",null);
+			  }
+			  else callback(err,null);
+		  });
+        },
+        function (callback) {
+          console.log('--- async.waterfall setGeoPoint #2 ---');
+          	peopleTree.changeManageMode(groupMemberId, manageMode, function(err,result){
+				if(!err){
+					if(result) callback(null);
+					else callback("change fail");
+				}
+				else callback(err,null);
+			});
+        },
+        function (callback) {
+          console.log('--- async.waterfall setGeoPoint #2 ---');
+          	peopleTree.getChildren(groupMemberId, function(err, children, length){
+				if(!err){
+				  children.forEach(function (childGroupMemberId) {
+				        peopleTree.push(groupMemberId, childGroupMemberId, "부모의 관리모드가 변경되었습니다.", manageMode, function(err,result){
+				          if(err) console.log(err.message);
+				        });
+			      });
+			      callback(null);
+				}
+				else callback(err,null);
+			});
+        },
+        function (callback) {
+        	console.log('--- async.waterfall setGeoPoint #3 ---');
+
+				peopleTree.setGeoPoint(groupMemberId, radius, points, function(err,obj){
+					if(!err){
+						console.log("/setGeoPoint : "+ JSON.stringify(obj));
+						callback(null)//res.json({status:200, responseData : "points's length * 2 + 1 = "+ obj });
+					}
+					else{
+						callback(err.message,null);//res.json({status:300, errorDesc : err.message });
+					}
+				});
+        }
+
+      ],
+      function(err) {
+        console.log('--- async.waterfall result setGeoPoint #1 ---');
+        if(!err)
+          res.json({status:200, reponseData : manageMode+" manageMode change success"});
+        else
+          res.json({status:300, reponseData : err});
 	});
+
 });
 
 
 /*
 #참조 지역 정보 가져오기
-#path : POST /ptree/location/getGeoPoint
+#path : POST /ptree/geoutil/getGeoPoint
 #req : int groupMemberId, double radius, Obj[] points
 #res : int status, string responseData
 #e.g : {"status":200,"responseData":[0, 1.1111, 1.1111 ]}
@@ -53,7 +116,7 @@ router.get('/getGeoPoint', function(req, res) {
 
 /*
 #현 위치 정보 가져오기
-#path : POST /ptree/location/getLocation
+#path : POST /ptree/geoutil/getLocation
 #req : int groupMemberId
 #res : int status, string responseData
 #e.g : {"status":200,"responseData":{"latitude":123,"longitude":123}}
@@ -112,7 +175,7 @@ router.get('/checkLocation', function(req, res) {
 
 /*
 #디바이스 상태 체크 및 위치 기록 및 위치 체크
-#path : POST /ptree/location/checkMember
+#path : POST /ptree/geoutil/checkMember
 #req : int groupMemeberId, int statusCode, double latitude, double longtitude, int fpId, int parentGroupMemberId, int parentManageMode, int edgyType
 #res : 
 #e.g : {"status":200,"reponseData":{"radius":4,"distance":220732.02658609525,"edgeStatus":300,"validation":false,"accumulateWarning":1}}
@@ -129,20 +192,24 @@ statusCode
 */
 router.get('/checkMember', function(req, res) {
 
-//1. setLocation과 2. checkLocation를 사용http://210.118.74.107:3000/ptree/location/checkMember?groupMemberId=20&statusCode=&latitude=7&longitude=2&parentGroupMemberId=41&parentManageMode=210&edgeType=200
+//1. setLocation과 2. checkLocation를 사용
 //statusCode에 따라서 디바이스 상태를 알고 부모에게 푸시를 준다.
-
+//http://210.118.74.107:3000/ptree/geoutil/checkMember?groupMemberId=20&statusCode=&latitude=7&longitude=2&parentGroupMemberId=41&parentManageMode=210&edgeType=200&fpId=0
 var groupMemberId = req.query.groupMemberId;
 var latitude = req.query.latitude;
 var longitude = req.query.longitude;
 var parentGroupMemberId = req.query.parentGroupMemberId;
 var manageMode = req.query.parentManageMode;
 
-
 var statusCode = req.query.statusCode;
 var edgeType = req.query.edgeType;
+var fpId = req.query.fpId;
 
-//var fpId = req.query.fpId;
+
+
+// 0 실외모드 ,(1 핑거프린트 사용 불가), 
+// 2번 부터는 해당 아이디
+
 //parentGroupMemberId, 부모의 manageMode, 나의 edgyType?
 /*
 2048 정상
@@ -166,7 +233,8 @@ var isLocationInvaild = false;
           console.log('--- async.waterfall checkMember #1 ---');
           //기기의 statusCode에 따라 프로세스가 진행되고 부모에게 알림이 간다.
 
-          if(edgeType==100){
+          //나의 부모의 관리모드가 200인것과 나의 엣지타입이 100인 것은 위치 검사를 안한다는 것이다.
+          if(edgeType==100 || manageMode==200){
           	isCheckLocation = false;
           }
 
@@ -197,7 +265,7 @@ var isLocationInvaild = false;
           
           if(statusCode!=2048){
 			    peopleTree.push(groupMemberId, parentGroupMemberId, message, statusCode, function(err,result){
-			    	if(!err) console.log(err);
+			    	if(err) console.log(err);
 		        });
 		  }
 		  console.log("device status : " + message);
@@ -207,7 +275,7 @@ var isLocationInvaild = false;
         function (callback) {
           console.log('--- async.waterfall checkMember #2 ---');
           //setLocation
-          if(isCheckLocation && !isLocationInvaild){
+          if(!isLocationInvaild){
 
 	      	  peopleTree.setLocation(groupMemberId, latitude, longitude, function(err,result){
 				  if(!err){
@@ -254,7 +322,10 @@ var isLocationInvaild = false;
         function (result, callback) {
           console.log('--- async.waterfall checkMember #4 ---');
           	//관리대상의 엣지타입이 위치관리 관계일때 검사를 하고 이탈자일때 푸시를 보낸다.
-	        //{"status":200,"reponseData":{"radius":4,"distance":220732.02658609525,"edgeStatus":300,"validation":false,"accumulateWarning":1}}
+	        //{manageMode: 210, "radius":4,"distance":220732.02658609525,"edgeStatus":300,"validation":false,"accumulateWarning":1}}
+	        //{manageMode: 220, "radius":4,"distance":220732.02658609525,"edgeStatus":300,"validation":false,"accumulateWarning":1}}
+	        //{manageMode: 230, "edgeStatus":300,"validation":false,"accumulateWarning":1}}
+
 	        // reponseData.validation 이 false 이면 reponseData를 푸시알림으로 부모에게 보낸다.
           	if(isCheckLocation){
           		if(!result.validation){
@@ -265,7 +336,7 @@ var isLocationInvaild = false;
 		      	callback(null,result);
 	      	}
 	      	else
-	      		callback(null,{reponseData:{edgeStatus:100}});
+	      		callback(null,{reponseData:{parentManageMode:200}});
         }
       ],
       function(err, results) {
@@ -289,7 +360,7 @@ router.get('/changeManageMode',function(req,res){
 
     var groupMemberId = req.query.groupMemberId;
     var manageMode = req.query.manageMode;
-
+	var edgeType = 100;
 	async.waterfall([
 
         function (callback) {
@@ -316,10 +387,26 @@ router.get('/changeManageMode',function(req,res){
           console.log('--- async.waterfall changeManageMode #2 ---');
           	peopleTree.getChildren(groupMemberId, function(err, children, length){
 				if(!err){
+
+					//부모의 모드가 210, 220, 230 이면 자식의 edgeType을 200으로 변경한다. 
+					//아니라면 100으로 변경한다.
+					
+					if(manageMode > 200)
+						edgeType = 200;
+					else 
+						edgeType = 100;
+
 				  children.forEach(function (childGroupMemberId) {
-				        peopleTree.push(groupMemberId, childGroupMemberId, "부모의 관리모드가 변경되었습니다.", manageMode, function(err,result){
-				          if(err) console.log(err.message);
-				        });
+
+					peopleTree.changeEdgeType(groupMemberId, edgeType, function(err,result){
+						if(err) console.log(err);
+						if(result){
+							peopleTree.push(groupMemberId, childGroupMemberId, "부모의 관리모드가 변경되었습니다.", manageMode, function(err,result){
+					          if(err) console.log(err.message);
+					        });
+						}
+					});
+
 			      });
 			      callback(null);
 				}

@@ -18,6 +18,8 @@ router.get('/group/member',function(req,res){
 
 	var queryString="";
 	var groupMemberId = req.query.groupMemberId;
+	var myGroupMemberId = req.query.myGroupMemberId;
+
 	var parentMemberId;
 
 	var parentInfo={};
@@ -40,140 +42,153 @@ router.get('/group/member',function(req,res){
         }
         else{
             if(rows.length == 1){
-            	async.waterfall([
-				  function (callback) {
-			          console.log('--- async.waterfall getInfoAll Node #1 ---');
 
-						peopleTree.getItems(groupMemberId,function(err,obj){
-							if(!err){
-								if(obj){
-									console.log(obj.userName);
-				                    curInfo = {
-    											"userId":obj.userId,
-    											"userNumber":parseInt(obj.userNumber),
-    											"groupMemberId":parseInt(obj.groupMemberId),
-    											"parentGroupMemberId":parseInt(obj.parentGroupMemberId),
-    											"userName":obj.userName,
-    											"groupId":parseInt(obj.groupId),
-				                                "userPhoneNumber": obj.userPhoneNumber,
-				                                "edgeStatus":parseInt(obj.edgeStatus),
-				                                "edgeType" : parseInt(obj.edgeType),
-				                                "manageMode":parseInt(obj.manageMode),
-				                                "managedLocationRadius":parseFloat(obj.managedLocationRadius),
-				                                "latitude" : parseFloat(obj.latitude),
-				                                "longitude" : parseFloat(obj.longitude),
-				                                "managingTotalNumber" : parseInt(obj.managingTotalNumber),
-				                                "managingNumber" : parseInt(obj.managingNumber),
-				                                "accumulateWarning" : parseInt(obj.accumulateWarning)
-				                            };
+            	peopleTree.isValidChange(myGroupMemberId,groupMemberId, function(err,valid){
+            		console.log("Authorized : "+!valid);
+            		if(!err){
+	            		if(!valid){
+	            			console.log("Authorized");
+			            	async.waterfall([
+							  function (callback) {
+						          console.log('--- async.waterfall getInfoAll Node #1 ---');
 
-									parentMemberId = curInfo.parentGroupMemberId;
-									callback(null,parentMemberId);
-								}
-								else
-									callback({status:404, errorDesc : "not login user"},null);
-							}
-							else
-								callback({status:500, responseData : err.message},null);
-						});
-			      },
-
-				  function (parentMemberId, callback) {
-			          console.log('--- async.waterfall getInfoAll Node #2 ---');
-			          	//부모 정보 가져오기
-			          	if(parentMemberId!=groupMemberId){
-							peopleTree.getItems(parentMemberId,function(err,obj){
-								if(!err){
-									if(obj){
-										console.log(obj.userName);
-					                    parentInfo = {
-	    											"userId":obj.userId,
-	    											"userNumber":parseInt(obj.userNumber),
-	    											"groupMemberId":parseInt(obj.groupMemberId),
-	    											"parentGroupMemberId":parseInt(obj.parentGroupMemberId),
-	    											"userName":obj.userName,
-	    											"groupId":parseInt(obj.groupId),
-					                                "userPhoneNumber": obj.userPhoneNumber,
-					                                "edgeStatus":parseInt(obj.edgeStatus),
-					                                "edgeType" : parseInt(obj.edgeType),
-					                                "manageMode":parseInt(obj.manageMode),
-					                                "managedLocationRadius":parseFloat(obj.managedLocationRadius),
-					                                "latitude" : parseFloat(obj.latitude),
-					                                "longitude" : parseFloat(obj.longitude),
-					                                "managingTotalNumber" : parseInt(obj.managingTotalNumber),
-					                                "managingNumber" : parseInt(obj.managingNumber),
-					                                "accumulateWarning" : parseInt(obj.accumulateWarning)
-					                            };
-										callback(null);
-									}
-									else
-										callback({status:404, errorDesc : "not login user"},null);
-								}
-								else
-									callback({status:500, responseData : err.message},null);
-							});
-						}
-						else
-							callback(null);
-			      },
-
-			      function (callback) {
-			          console.log('--- async.waterfall getInfoAll Node #3 ---');
-		            	peopleTree.getChildren(groupMemberId,function(err,children,length){
-
-			                if (!err){
-				                var length = children.length;
-				                console.log('item.length!! : '+length);
-				                var count = length-1;
-
-				                children.forEach(function (childGroupMemberid) {
-									peopleTree.getItems(childGroupMemberid,function(err,obj){
+									peopleTree.getItems(groupMemberId,function(err,obj){
 										if(!err){
 											if(obj){
 												console.log(obj.userName);
-							                    childrenInfo.push({
-	                    											"userId":obj.userId,
-	                    											"userNumber":parseInt(obj.userNumber),
-	                    											"groupMemberId":parseInt(obj.groupMemberId),
-	                    											"parentGroupMemberId":parseInt(obj.parentGroupMemberId),
-	                    											"userName":obj.userName,
-	                    											"groupId":parseInt(obj.groupId),
-									                                "userPhoneNumber": obj.userPhoneNumber,
-									                                "edgeStatus":parseInt(obj.edgeStatus),
-									                                "edgeType" : parseInt(obj.edgeType),
-									                                "manageMode":parseInt(obj.manageMode),
-									                                "managedLocationRadius":parseFloat(obj.managedLocationRadius),
-									                                "latitude" : parseFloat(obj.latitude),
-									                                "longitude" : parseFloat(obj.longitude),
-									                                "managingTotalNumber" : parseInt(obj.managingTotalNumber),
-									                                "managingNumber" : parseInt(obj.managingNumber),
-									                                "accumulateWarning" : parseInt(obj.accumulateWarning)
-									                            });
-							                  	if(!count--)
-							                      callback(null);
+							                    curInfo = {
+			    											"userId":obj.userId,
+			    											"userNumber":parseInt(obj.userNumber),
+			    											"groupMemberId":parseInt(obj.groupMemberId),
+			    											"parentGroupMemberId":parseInt(obj.parentGroupMemberId),
+			    											"userName":obj.userName,
+			    											"groupId":parseInt(obj.groupId),
+							                                "userPhoneNumber": obj.userPhoneNumber,
+							                                "edgeStatus":parseInt(obj.edgeStatus),
+							                                "edgeType" : parseInt(obj.edgeType),
+							                                "manageMode":parseInt(obj.manageMode),
+							                                "managedLocationRadius":parseFloat(obj.managedLocationRadius),
+							                                "latitude" : parseFloat(obj.latitude),
+							                                "longitude" : parseFloat(obj.longitude),
+							                                "managingTotalNumber" : parseInt(obj.managingTotalNumber),
+							                                "managingNumber" : parseInt(obj.managingNumber),
+							                                "accumulateWarning" : parseInt(obj.accumulateWarning)
+							                            };
+
+												parentMemberId = curInfo.parentGroupMemberId;
+												callback(null,parentMemberId);
 											}
 											else
-												callback({status:404, errorDesc : "exist child that logout failed"},null);
+												callback({status:404, errorDesc : "not login user"},null);
 										}
 										else
 											callback({status:500, responseData : err.message},null);
 									});
-				                });
-				                if(!length) callback(null);
-				              }
-				            else
-				              callback(err.message, null);
-					    });
-		          	}
-			    ],
-			    function(err) {
-			      console.log('--- async.waterfall result getInfoAll Node #1 ---');
-			      if(!err)
-			        return res.json({status:200, responseData : { parentInfo : parentInfo, curInfo : curInfo,  childrenInfo : childrenInfo }});
-			      else{
-			        return res.json({status:401, errorDesc : err});
-			      }
-			  });
+						      },
+
+							  function (parentMemberId, callback) {
+						          console.log('--- async.waterfall getInfoAll Node #2 ---');
+						          	//부모 정보 가져오기
+						          	if(parentMemberId!=groupMemberId){
+										peopleTree.getItems(parentMemberId,function(err,obj){
+											if(!err){
+												if(obj){
+													console.log(obj.userName);
+								                    parentInfo = {
+				    											"userId":obj.userId,
+				    											"userNumber":parseInt(obj.userNumber),
+				    											"groupMemberId":parseInt(obj.groupMemberId),
+				    											"parentGroupMemberId":parseInt(obj.parentGroupMemberId),
+				    											"userName":obj.userName,
+				    											"groupId":parseInt(obj.groupId),
+								                                "userPhoneNumber": obj.userPhoneNumber,
+								                                "edgeStatus":parseInt(obj.edgeStatus),
+								                                "edgeType" : parseInt(obj.edgeType),
+								                                "manageMode":parseInt(obj.manageMode),
+								                                "managedLocationRadius":parseFloat(obj.managedLocationRadius),
+								                                "latitude" : parseFloat(obj.latitude),
+								                                "longitude" : parseFloat(obj.longitude),
+								                                "managingTotalNumber" : parseInt(obj.managingTotalNumber),
+								                                "managingNumber" : parseInt(obj.managingNumber),
+								                                "accumulateWarning" : parseInt(obj.accumulateWarning)
+								                            };
+													callback(null);
+												}
+												else
+													callback({status:404, errorDesc : "not login user"},null);
+											}
+											else
+												callback({status:500, responseData : err.message},null);
+										});
+									}
+									else
+										callback(null);
+						      },
+
+						      function (callback) {
+						          console.log('--- async.waterfall getInfoAll Node #3 ---');
+					            	peopleTree.getChildren(groupMemberId,function(err,children,length){
+
+						                if (!err){
+							                var length = children.length;
+							                console.log('item.length!! : '+length);
+							                var count = length-1;
+
+							                children.forEach(function (childGroupMemberid) {
+												peopleTree.getItems(childGroupMemberid,function(err,obj){
+													if(!err){
+														if(obj){
+															console.log(obj.userName);
+										                    childrenInfo.push({
+				                    											"userId":obj.userId,
+				                    											"userNumber":parseInt(obj.userNumber),
+				                    											"groupMemberId":parseInt(obj.groupMemberId),
+				                    											"parentGroupMemberId":parseInt(obj.parentGroupMemberId),
+				                    											"userName":obj.userName,
+				                    											"groupId":parseInt(obj.groupId),
+												                                "userPhoneNumber": obj.userPhoneNumber,
+												                                "edgeStatus":parseInt(obj.edgeStatus),
+												                                "edgeType" : parseInt(obj.edgeType),
+												                                "manageMode":parseInt(obj.manageMode),
+												                                "managedLocationRadius":parseFloat(obj.managedLocationRadius),
+												                                "latitude" : parseFloat(obj.latitude),
+												                                "longitude" : parseFloat(obj.longitude),
+												                                "managingTotalNumber" : parseInt(obj.managingTotalNumber),
+												                                "managingNumber" : parseInt(obj.managingNumber),
+												                                "accumulateWarning" : parseInt(obj.accumulateWarning)
+												                            });
+										                  	if(!count--)
+										                      callback(null);
+														}
+														else
+															callback({status:404, errorDesc : "exist child that logout failed"},null);
+													}
+													else
+														callback({status:500, responseData : err.message},null);
+												});
+							                });
+							                if(!length) callback(null);
+							              }
+							            else
+							              callback(err.message, null);
+								    });
+					          	}
+						    ],
+						    function(err) {
+						      console.log('--- async.waterfall result getInfoAll Node #1 ---');
+						      if(!err)
+						        return res.json({status:200, responseData : { parentInfo : parentInfo, curInfo : curInfo,  childrenInfo : childrenInfo }});
+						      else{
+						        return res.json({status:401, errorDesc : err});
+						      }
+						  });
+	            		}
+	            		else
+	            			res.json({status:300, errorDesc : "not authorize"});
+	            	}
+	            	else
+	            		res.json({status:300, errorDesc : err});
+            	});
             }
             else	        
               res.json({status:401});

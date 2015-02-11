@@ -86,7 +86,7 @@ PeopleTree.prototype.insertNode = function(userNumber, f) {
               });
           }
           else{
-              callback(null, {userNumber : groupMemberId, desc : 'already exist list'});
+              callback({userNumber : groupMemberId, desc : 'already exist list'},null);
           }
         }
       ],
@@ -390,6 +390,11 @@ PeopleTree.prototype.outGroup = function(groupMemberId, f) {
           //부모가 있다면 원래 부모에서 나를 제거한다.
           if(groupMemberId != myData.parentGroupMemberId){
             tree.lrem("L/"+myData.parentGroupMemberId, -1, groupMemberId, function(err, deleteNumber){
+              //PUSH
+              peopleTree.push(groupMemberId, myData.parentGroupMemberId, "그룹을 나갔습니다.", 700, function(err,result){
+                if(err) console.log(err.message);
+              });
+
               if(!err)
                 callback(null,myData);
               else
@@ -475,6 +480,13 @@ PeopleTree.prototype.deleteNode = function(groupMemberId, f) {
           console.log('--- async.waterfall delete Node #2 ---');
           //나의 부모가 있을때
           if(groupMemberId != parentGroupMemberId){
+
+              //PUSH
+              peopleTree.push(groupMemberId, parentGroupMemberId, "로그아웃 했습니다.", 710, function(err,result){
+                if(err) console.log(err.message);
+              });
+
+
             tree.lrem("L/"+parentGroupMemberId, -1, groupMemberId , function(err,deleteNumber){
               console.log("delete myId from parent L : "+deleteNumber);
 
@@ -674,7 +686,7 @@ PeopleTree.prototype.changeManageMode = function(groupMemberId, manageMode, f) {
 PeopleTree.prototype.changeEdgeType = function(groupMemberId, edgeType, f) {
   tree.hset('H/'+groupMemberId, 'edgeType', edgeType, function(err, updateNumber){
     if(!err){
-      return f(null, 0);
+      return f(null, true);
     }
     else
       return f(err.message, null);
@@ -1148,7 +1160,7 @@ PeopleTree.prototype.checkTrackingModeAndAreaMode = function(groupMemberId, pare
           //벗어남 flag가 false 1추가
           peopleTree.accumulateWarning(groupMemberId, false, function(err,accumulateWarning){
             if(!err)
-              callback(null, {radius: radius, distance: distance, edgeStatus: 300, validation : validation, accumulateWarning : accumulateWarning});
+              callback(null, {manageMode: manageMode, radius: radius, distance: distance, edgeStatus: 300, validation : validation, accumulateWarning : accumulateWarning});
             else
               callback({status:400, errorDesc: err}, null);
           });
@@ -1157,7 +1169,7 @@ PeopleTree.prototype.checkTrackingModeAndAreaMode = function(groupMemberId, pare
           //true면 accumulateWarning을 0으로 리셋
           peopleTree.accumulateWarning(groupMemberId, true, function(err,accumulateWarning){
             if(!err)
-              callback(null, {radius: radius, distance: distance, edgeStatus: 200, validation : validation, accumulateWarning:accumulateWarning});
+              callback(null, {manageMode: manageMode, radius: radius, distance: distance, edgeStatus: 200, validation : validation, accumulateWarning:accumulateWarning});
             else
               callback({status:400, errorDesc: err}, null);
           });
@@ -1350,8 +1362,8 @@ PeopleTree.prototype.checkGeofencingMode = function(groupMemberId, parentGroupMe
           //벗어남 flag가 false 1추가
           peopleTree.accumulateWarning(groupMemberId, false, function(err,accumulateWarning){
             if(!err){
-              //TODO 누적치 만큼 푸시 위로 올리기
-              callback(null, {edgeStatus: 300, validation : validation, accumulateWarning : accumulateWarning});
+              //누적치 만큼 푸시 위로 올리기
+              callback(null, {manageMode: 230, edgeStatus: 300, validation : validation, accumulateWarning : accumulateWarning});
             }
             else
               callback({status:400, errorDesc: err}, null);
@@ -1361,7 +1373,7 @@ PeopleTree.prototype.checkGeofencingMode = function(groupMemberId, parentGroupMe
           //true면 0으로 리셋
           peopleTree.accumulateWarning(groupMemberId, true, function(err,accumulateWarning){
             if(!err)
-              callback(null, {edgeStatus: 200, validation : validation, accumulateWarning : accumulateWarning});
+              callback(null, {manageMode: 230, edgeStatus: 200, validation : validation, accumulateWarning : accumulateWarning});
             else
               callback({status:400, errorDesc: err}, null);
           });
@@ -1472,7 +1484,7 @@ PeopleTree.prototype.broadcastDown = function(groupMemberId, depth, message, f) 
   peopleTree.gatherChildren(groupMemberId, depth, function(err,children){
       if(!err){
         children.forEach(function (childGroupMemberId) {
-          peopleTree.push(groupMemberId, childGroupMemberId, message, 300, function(err,result){
+          peopleTree.push(groupMemberId, childGroupMemberId, message, 100, function(err,result){
             if(err) console.log(err.message);
           });
         });
