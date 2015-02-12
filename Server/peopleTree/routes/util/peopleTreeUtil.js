@@ -21,7 +21,7 @@ router.get('/searchMember', function(req, res) {
 	var searchArr = [keyword, keyword, keyword];
 	var queryString='SELECT userNumber FROM idinfo WHERE userId=? OR userPhoneNumber=? OR userName=?';
 
-	console.log(queryString);
+	console.log(queryString+"/"+keyword);
 
 	var query = dbcon.query(queryString, searchArr, function(err,rows){
 		console.log("rows.length : "+rows.length);

@@ -70,9 +70,10 @@ router.get('/message',function(req,res){
 	var statusCode = 600;
 
     peopleTree.push(from, to, message, statusCode, function(err,result){
-        if(!err) res.json({status:200, responseData : { from : parseInt(from), to : parseInt(to), statusCode: parseInt(statusCode), message :message } });
-        else res.json({status:300, errorDesc : err});
+        if(err) console.log(err);
     });
+
+    res.json({status:200, responseData : { from : parseInt(from), to : parseInt(to), statusCode: parseInt(statusCode), message :message } });
 });
 
 module.exports = router;

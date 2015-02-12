@@ -994,7 +994,7 @@ PeopleTree.prototype.checkInvalidLocation = function(groupMemberId, parentGroupM
           });
         }
         else
-          callback(null, radius, distance);        
+          callback(null);        
       },
 
       function(callback){

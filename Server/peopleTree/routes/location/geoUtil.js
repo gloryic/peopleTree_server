@@ -232,7 +232,6 @@ var isLocationInvaild = false;
 		function (callback) {
           console.log('--- async.waterfall checkMember #1 ---');
           //기기의 statusCode에 따라 프로세스가 진행되고 부모에게 알림이 간다.
-
           //나의 부모의 관리모드가 200인것과 나의 엣지타입이 100인 것은 위치 검사를 안한다는 것이다.
           if(edgeType==100 || manageMode==200){
           	isCheckLocation = false;
@@ -263,7 +262,10 @@ var isLocationInvaild = false;
           	}
           }
           
-          if(statusCode!=2048){
+          if(groupMemberId == parentGroupMemberId)
+          	console.log("N."+groupMemberId+" send checkmember - not have parent user");
+
+          if( (statusCode!=2048) && (groupMemberId != parentGroupMemberId) ){
 			    peopleTree.push(groupMemberId, parentGroupMemberId, message, statusCode, function(err,result){
 			    	if(err) console.log(err);
 		        });
@@ -273,10 +275,10 @@ var isLocationInvaild = false;
         },
 
         function (callback) {
-          console.log('--- async.waterfall checkMember #2 ---');
+          
           //setLocation
           if(!isLocationInvaild){
-
+          	console.log('--- async.waterfall checkMember #2 ---');
 	      	  peopleTree.setLocation(groupMemberId, latitude, longitude, function(err,result){
 				  if(!err){
 					  console.log("/setLocation : "+ result);
@@ -292,9 +294,10 @@ var isLocationInvaild = false;
 	      }
         },
         function (callback) {
-          console.log('--- async.waterfall checkMember #3 ---');
+         
           //checkLocation
           if(isCheckLocation && !isLocationInvaild){
+          	console.log('--- async.waterfall checkMember #3 ---');
           	peopleTree.checkLocation(groupMemberId, parentGroupMemberId, manageMode, function(err,result){
 				if(!err){
 					console.log("/checkLocation : "+ JSON.stringify(result));
@@ -306,6 +309,7 @@ var isLocationInvaild = false;
 			});
           }
           else if(isCheckLocation) {
+          	  console.log('--- async.waterfall checkMember #3 ---');
 	      	  peopleTree.checkInvalidLocation(groupMemberId, parentGroupMemberId, function(err,result){
 				  if(!err){
 					  console.log("/checkInvalidLocation : "+ result);
@@ -320,15 +324,16 @@ var isLocationInvaild = false;
           	callback(null, null);
         },
         function (result, callback) {
-          console.log('--- async.waterfall checkMember #4 ---');
+          
           	//관리대상의 엣지타입이 위치관리 관계일때 검사를 하고 이탈자일때 푸시를 보낸다.
 	        //{manageMode: 210, "radius":4,"distance":220732.02658609525,"edgeStatus":300,"validation":false,"accumulateWarning":1}}
 	        //{manageMode: 220, "radius":4,"distance":220732.02658609525,"edgeStatus":300,"validation":false,"accumulateWarning":1}}
 	        //{manageMode: 230, "edgeStatus":300,"validation":false,"accumulateWarning":1}}
-
 	        // reponseData.validation 이 false 이면 reponseData를 푸시알림으로 부모에게 보낸다.
+
           	if(isCheckLocation){
           		if(!result.validation){
+          			console.log('--- async.waterfall checkMember #4 ---');
 		      		peopleTree.push(groupMemberId, parentGroupMemberId, result, statusCode, function(err,result){
 			          if(err) console.log(err.message);
 			        });
