@@ -65,7 +65,8 @@ router.get('/group/member',function(req,res){
 												                                "longitude" : null,
 												                                "managingTotalNumber" : 0,
 												                                "managingNumber" : 0,
-												                                "accumulateWarning" : 0
+												                                "accumulateWarning" : 0,
+												                                "fpId" : 0
 												                            }
 									});
 			                }

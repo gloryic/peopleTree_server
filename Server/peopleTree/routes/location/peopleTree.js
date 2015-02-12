@@ -4,6 +4,7 @@ var request = require('request');
 var url = require('url');
 var gps = require('gps-util');
 
+
 function PeopleTree(redisClient){}
 
 //로그인시 첫 수행
@@ -15,7 +16,7 @@ PeopleTree.prototype.insertNode = function(userNumber, f) {
           console.log('--- async.waterfall insertNode #1 ---');
           request( {
             method: 'GET',
-            url: 'http://210.118.74.107:3000/ptree/_getinfo/group/member?userNumber='+userNumber,
+            url: 'http://'+baseURL+'/ptree/_getinfo/group/member?userNumber='+userNumber,
           }, function(err, response) {
             if(!err){
               items = JSON.parse(response.body).responseData;
@@ -231,7 +232,8 @@ PeopleTree.prototype.changeParent = function(groupMemberId, parentGroupMemberId,
           console.log('--- async.waterfall changeParent #5 ---');
           //1. 나의 부모를 변경
           //2. 나의 그룹 아이디를 변경
-          var items = {groupId:parentData.groupId, parentGroupMemberId:parentGroupMemberId};
+          //3. 초기화
+          var items = {groupId:parentData.groupId, parentGroupMemberId:parentGroupMemberId, edgeStatus:100, accumulateWarning : 0};
           console.log("myChangeParent : "+JSON.stringify(items));
           tree.hmset("H/"+groupMemberId, items, function(err,obj){
             if(!err)
@@ -422,7 +424,8 @@ PeopleTree.prototype.outGroup = function(groupMemberId, f) {
           //나의 해시 테이블 수정
           //1. 나의 부모를 변경
           //2. 나의 그룹 아이디를 변경
-          var items = {groupId:0, parentGroupMemberId:groupMemberId};
+          //3. 초기화 
+          var items = {groupId:0, parentGroupMemberId:groupMemberId, edgeStatus:100, accumulateWarning : 0};
           tree.hmset("H/"+groupMemberId, items, function(err,obj){
             if(!err)
               callback(null);
@@ -485,7 +488,6 @@ PeopleTree.prototype.deleteNode = function(groupMemberId, f) {
               peopleTree.push(groupMemberId, parentGroupMemberId, "로그아웃 했습니다.", 710, function(err,result){
                 if(err) console.log(err.message);
               });
-
 
             tree.lrem("L/"+parentGroupMemberId, -1, groupMemberId , function(err,deleteNumber){
               console.log("delete myId from parent L : "+deleteNumber);
@@ -888,13 +890,14 @@ PeopleTree.prototype.setGeoPoint = function(groupMemberId, radius, points, f) {
 }
 
 //해쉬에 현 위치를 업데이트한다.
-PeopleTree.prototype.setLocation = function(groupMemberId, latitude, longitude, f) {
+PeopleTree.prototype.setLocation = function(groupMemberId, latitude, longitude, fpId, f) {
 
   peopleTree.isExist(groupMemberId, function(err,exist){
 
     var items = {
                   longitude:longitude,
-                  latitude:latitude
+                  latitude:latitude,
+                  fpId : fpId,
                 };
 
     console.log("setLocation : "+JSON.stringify(items));
@@ -925,6 +928,19 @@ PeopleTree.prototype.getLocation = function(groupMemberId, f){
   });
 }
 
+
+PeopleTree.prototype.getLocationForFp = function(groupMemberId, f){
+  tree.hmget('H/'+groupMemberId, 'latitude', 'longitude', 'fpId', function(err,obj){
+    console.log(obj.length);
+    if(!err){
+      if(obj.length==2) return f(null, {latitude:parseFloat(obj[0]), longitude:parseFloat(obj[1]),  fpId:parseFloat(obj[2])} );
+      else return f("not pair location", null);
+    }
+    else return f(err.message, null);
+  });
+}
+
+
 PeopleTree.prototype.checkLocation = function(groupMemberId, parentGroupMemberId, manageMode, f) {
    console.log("checkLocation"); 
   //210 - 트레킹 모드 //220 - 지역모드
@@ -954,7 +970,7 @@ PeopleTree.prototype.checkLocation = function(groupMemberId, parentGroupMemberId
 }
 
 
-PeopleTree.prototype.checkInvalidLocation = function(groupMemberId, parentGroupMemberId,f) {
+PeopleTree.prototype.checkInvalidLocation = function(groupMemberId, parentGroupMemberId, parentManageMode, f) {
 
   async.waterfall([
       //나의 edgeStatus를 가져온다
@@ -987,6 +1003,7 @@ PeopleTree.prototype.checkInvalidLocation = function(groupMemberId, parentGroupM
       function(edgeStatus, callback){
         console.log('--- async.waterfall checkInvalidLocation Node #3 ---');
         //부모의 관리 인원 중 나를 감소시킨다.
+
         if(edgeStatus!=300){
           peopleTree.affectAllParents(groupMemberId, -1, true, function(err,result){
             if(!err) callback(null);
@@ -994,14 +1011,15 @@ PeopleTree.prototype.checkInvalidLocation = function(groupMemberId, parentGroupM
           });
         }
         else
-          callback(null);        
+          callback(null);     
+
       },
 
       function(callback){
         console.log('--- async.waterfall checkInvalidLocation Node #7 ---');
         peopleTree.accumulateWarning(groupMemberId, false, function(err,accumulateWarning){
           if(!err)
-            callback(null, {edgeStatus: 300, validation : false, accumulateWarning : accumulateWarning});
+            callback(null, {parentManageMode: parentManageMode, radius: -1, distance: -1, edgeStatus: 300, validation : false, accumulateWarning : accumulateWarning});
           else
             callback({status:400, errorDesc: err}, null);
         });
@@ -1116,7 +1134,7 @@ PeopleTree.prototype.checkTrackingModeAndAreaMode = function(groupMemberId, pare
         if(radius < distance) validation = false;
 
         //validation==false 면 edgeStatus를 300으로 변경
-        if(!validation&&edgeStatus!=300){
+        if(!validation){
           peopleTree.changeEdgeStatus(groupMemberId, 300, function(err, updateNumber){
             if(!err)
               callback(null, radius, edgeStatus, distance);
@@ -1124,7 +1142,7 @@ PeopleTree.prototype.checkTrackingModeAndAreaMode = function(groupMemberId, pare
               callback({status:400, errorDesc: err}, null);
           });
         }
-        else if(validation&&edgeStatus!=200){
+        else if(validation){
           peopleTree.changeEdgeStatus(groupMemberId, 200, function(err, updateNumber){
             if(!err)
               callback(null, radius, edgeStatus, distance);
@@ -1138,6 +1156,7 @@ PeopleTree.prototype.checkTrackingModeAndAreaMode = function(groupMemberId, pare
 
       function(radius, edgeStatus, distance, callback){
         console.log('--- async.waterfall checkTrackingModeAndAreaMode Node #6 ---');
+        console.log("!validation&&edgeStatus" + validation + "/" +edgeStatus);
         if(!validation&&edgeStatus!=300){
           peopleTree.affectAllParents(groupMemberId, -1, true, function(err,result){
             if(!err) callback(null, radius, distance);
@@ -1160,7 +1179,7 @@ PeopleTree.prototype.checkTrackingModeAndAreaMode = function(groupMemberId, pare
           //벗어남 flag가 false 1추가
           peopleTree.accumulateWarning(groupMemberId, false, function(err,accumulateWarning){
             if(!err)
-              callback(null, {manageMode: manageMode, radius: radius, distance: distance, edgeStatus: 300, validation : validation, accumulateWarning : accumulateWarning});
+              callback(null, {parentManageMode: manageMode, radius: radius, distance: distance, edgeStatus: 300, validation : validation, accumulateWarning : accumulateWarning});
             else
               callback({status:400, errorDesc: err}, null);
           });
@@ -1169,7 +1188,7 @@ PeopleTree.prototype.checkTrackingModeAndAreaMode = function(groupMemberId, pare
           //true면 accumulateWarning을 0으로 리셋
           peopleTree.accumulateWarning(groupMemberId, true, function(err,accumulateWarning){
             if(!err)
-              callback(null, {manageMode: manageMode, radius: radius, distance: distance, edgeStatus: 200, validation : validation, accumulateWarning:accumulateWarning});
+              callback(null, {parentManageMode: manageMode, radius: radius, distance: distance, edgeStatus: 200, validation : validation, accumulateWarning:accumulateWarning});
             else
               callback({status:400, errorDesc: err}, null);
           });
@@ -1363,7 +1382,7 @@ PeopleTree.prototype.checkGeofencingMode = function(groupMemberId, parentGroupMe
           peopleTree.accumulateWarning(groupMemberId, false, function(err,accumulateWarning){
             if(!err){
               //누적치 만큼 푸시 위로 올리기
-              callback(null, {manageMode: 230, edgeStatus: 300, validation : validation, accumulateWarning : accumulateWarning});
+              callback(null, {parentManageMode: 230, edgeStatus: 300, validation : validation, accumulateWarning : accumulateWarning});
             }
             else
               callback({status:400, errorDesc: err}, null);
@@ -1373,7 +1392,7 @@ PeopleTree.prototype.checkGeofencingMode = function(groupMemberId, parentGroupMe
           //true면 0으로 리셋
           peopleTree.accumulateWarning(groupMemberId, true, function(err,accumulateWarning){
             if(!err)
-              callback(null, {manageMode: 230, edgeStatus: 200, validation : validation, accumulateWarning : accumulateWarning});
+              callback(null, {parentManageMode: 230, edgeStatus: 200, validation : validation, accumulateWarning : accumulateWarning});
             else
               callback({status:400, errorDesc: err}, null);
           });

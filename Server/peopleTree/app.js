@@ -68,10 +68,14 @@ app.use(function(req, res, next) {
     next(err);
 });
 
+
+//global.baseURL = '210.118.74.107:3000';
+global.baseURL = '210.118.74.230:5033';
+
 var dbConfig = {
-  host:'210.118.74.107',
+  host:'210.118.74.230',
   port: 3306,
-  user: 'root',
+  user: 'JUYOUNGKWANG-PC',
   password:'1234',
   database:'peopletree'
 };

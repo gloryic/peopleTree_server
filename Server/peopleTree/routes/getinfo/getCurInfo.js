@@ -76,7 +76,8 @@ router.get('/group/member',function(req,res){
 												                                "longitude" : parseFloat(obj.longitude),
 												                                "managingTotalNumber" : parseInt(obj.managingTotalNumber),
 												                                "managingNumber" : parseInt(obj.managingNumber),
-												                                "accumulateWarning" : parseInt(obj.accumulateWarning)
+												                                "accumulateWarning" : parseInt(obj.accumulateWarning),
+												                                "fpId" : parseInt(obj.fpId)
 												                            }
 											});
 						}

@@ -211,6 +211,7 @@ var fpId = req.query.fpId;
 
 
 
+
 // 0 실외모드 ,(1 핑거프린트 사용 불가), 
 // 2번 부터는 해당 아이디
 
@@ -230,6 +231,7 @@ var fpId = req.query.fpId;
 var message = '';
 var isCheckLocation = true;
 var isLocationInvaild = false;
+var isFingerPrint = false;
 
 	async.waterfall([
 		
@@ -237,6 +239,13 @@ var isLocationInvaild = false;
           console.log('--- async.waterfall checkMember #1 ---');
           //기기의 statusCode에 따라 프로세스가 진행되고 부모에게 알림이 간다.
           //나의 부모의 관리모드가 200인것과 나의 엣지타입이 100인 것은 위치 검사를 안한다는 것이다.
+
+          if(fpId == 1)
+          	isLocationInvaild = true;
+          else if(fpId >= 2)
+          	isFingerPrint = true;
+
+
           if(edgeType==100 || manageMode==200){
           	isCheckLocation = false;
           }
@@ -272,8 +281,8 @@ var isLocationInvaild = false;
           }
           	
 
-          if( (statusCode!=2048) && (groupMemberId != parentGroupMemberId) ){
-			    peopleTree.push(groupMemberId, parentGroupMemberId, message, statusCode, function(err,result){
+          if( manageMode!=200 && (statusCode!=2048) && (groupMemberId != parentGroupMemberId) ){
+			    peopleTree.push(groupMemberId, parentGroupMemberId, {parentManageMode: manageMode, radius: -1, distance: -1, edgeStatus: 300, validation : false, accumulateWarning : 0}, statusCode, function(err,result){
 			    	if(err) console.log(err);
 		        });
 		  }
@@ -286,7 +295,7 @@ var isLocationInvaild = false;
           //setLocation
           if(!isLocationInvaild){
           	console.log('--- async.waterfall checkMember #2 ---');
-	      	  peopleTree.setLocation(groupMemberId, latitude, longitude, function(err,result){
+	      	  peopleTree.setLocation(groupMemberId, latitude, longitude, fpId, function(err,result){
 				  if(!err){
 					  console.log("/setLocation : "+ result);
 					  if(result) callback(null);
@@ -303,32 +312,80 @@ var isLocationInvaild = false;
         function (callback) {
          
           //checkLocation
-          if(isCheckLocation && !isLocationInvaild){
-          	console.log('--- async.waterfall checkMember #3-1 ---');
-          	peopleTree.checkLocation(groupMemberId, parentGroupMemberId, manageMode, function(err,result){
-				if(!err){
-					console.log("/checkLocation : "+ JSON.stringify(result));
-					callback(null,result);
-				}
-				else{
-					callback(err,null);
-				}
-			});
+          if(isFingerPrint){
+
+          	peopleTree.getLocationForFp(groupMemberId, function(err, myData){
+
+	          	peopleTree.getLocationForFp(parentGroupMemberId, function(err, parentData){
+
+	          		if(myData.fpId != parentData.fpId){
+          				 peopleTree.checkInvalidLocation(groupMemberId, parentGroupMemberId, manageMode, function(err,result){
+							  if(!err){
+								  console.log("/checkInvalidLocation : "+ result);
+								  if(result) callback(null,result);
+								  else callback({status:400, errorDesc:"Invalid Location process failed"},null);
+							  }
+							  else
+								  callback(err,null);
+						 });
+	          		}
+	          		else{
+
+	          				var myFpFirstNum = parseInt(myData.latitude/100);
+	          				var parentFpFirstNum =  parseInt(parentData.latitude/100);
+
+	          				console.log("myFpFirstNum and parentFpFirstNum" + myFpFirstNum + " / " + parentFpFirstNum);
+
+	          			if (myFpFirstNum != parentFpFirstNum ){
+	          				//실내모드에서 떨어졌을때
+	          				peopleTree.checkInvalidLocation(groupMemberId, parentGroupMemberId, manageMode, function(err,result){
+								  if(!err){
+									  console.log("/checkInvalidLocation : "+ result);
+									  if(result) callback(null,result);
+									  else callback({status:400, errorDesc:"Invalid Location process failed"},null);
+								  }
+								  else
+									  callback(err,null);
+							 });
+	          			}
+	          			else//정상일때
+	          				callback(null, {parentManageMode: manageMode, radius: -1, distance: -1, edgeStatus: 200, validation : true, accumulateWarning : 0});
+	          		}
+	          	});
+
+          	});
+
           }
-          else if(isCheckLocation) {
-          	  console.log('--- async.waterfall checkMember #3-2 ---');
-	      	  peopleTree.checkInvalidLocation(groupMemberId, parentGroupMemberId, function(err,result){
-				  if(!err){
-					  console.log("/checkInvalidLocation : "+ result);
-					  if(result) callback(null,result);
-					  else callback({status:400, errorDesc:"Invalid Location process failed"},null);
-				  }
-				  else
-					  callback(err,null);
-			  });
-          }
-          else
-          	callback(null, null);
+          else{
+
+	          if(isCheckLocation && !isLocationInvaild){
+	          	console.log('--- async.waterfall checkMember #3-1 ---');
+	          	peopleTree.checkLocation(groupMemberId, parentGroupMemberId, manageMode, function(err,result){
+					if(!err){
+						console.log("/checkLocation : "+ JSON.stringify(result));
+						callback(null,result);
+					}
+					else{
+						callback(err,null);
+					}
+				});
+	          }
+	          else if(isCheckLocation) {
+	          	  console.log('--- async.waterfall checkMember #3-2 ---');
+		      	  peopleTree.checkInvalidLocation(groupMemberId, parentGroupMemberId, manageMode, function(err,result){
+					  if(!err){
+						  console.log("/checkInvalidLocation : "+ result);
+						  if(result) callback(null,result);
+						  else callback({status:400, errorDesc:"Invalid Location process failed"},null);
+					  }
+					  else
+						  callback(err,null);
+				  });
+	          }
+	          else
+	          	callback(null, null);
+
+            }
         },
         function (result, callback) {
           

@@ -24,7 +24,7 @@ router.get('/searchMember', function(req, res) {
 	console.log(queryString+"/"+keyword);
 
 	var query = dbcon.query(queryString, searchArr, function(err,rows){
-		console.log("rows.length : "+rows.length);
+		//console.log("rows.length : "+rows.length);
 		if(!err){
 			if (rows.length == 0)
 				res.json({status:200, responseData : {groupMembersNumber : arrInfo.length, groupMembersInfo : arrInfo} });
