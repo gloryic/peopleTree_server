@@ -110,4 +110,27 @@ router.get('/showTree', function(req, res) {
 	});
 });
 
+
+router.get('/showTreeV2', function(req, res) {
+
+	var rootGroupMemberId = req.query.rootGroupMemberId;
+	peopleTree.isExist(rootGroupMemberId, function(err,flag){
+		if(!err){
+			if(flag){
+				peopleTree.showTreeV2(rootGroupMemberId, function(err,obj){
+					res.jsonp(obj);
+				});
+			}
+			else{
+				res.json({status:200,errorDesc:"not exist groupMemberId"});
+			}
+		}
+		else{
+			res.json({status:500,errorDesc:"redis error"});
+		}
+	});
+
+
+});
+
 module.exports = router;

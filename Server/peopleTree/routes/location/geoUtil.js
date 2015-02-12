@@ -19,8 +19,12 @@ router.get('/setGeoPoint', function(req, res) {
 	console.log("points : "+JSON.stringify(points));
 	console.log("points.length : "+points.length);
 
-	if(points.length == 0)
-	    manageMode = 210;
+	if(points.length == 0){
+	    if(radius == 0)
+			manageMode = 200;
+		else
+			manageMode = 210;
+	}
 	else if(points.length == 1)
 		manageMode = 220;
 	else
@@ -262,8 +266,11 @@ var isLocationInvaild = false;
           	}
           }
           
-          if(groupMemberId == parentGroupMemberId)
+          if(groupMemberId == parentGroupMemberId){
           	console.log("N."+groupMemberId+" send checkmember - not have parent user");
+          	isCheckLocation = false;
+          }
+          	
 
           if( (statusCode!=2048) && (groupMemberId != parentGroupMemberId) ){
 			    peopleTree.push(groupMemberId, parentGroupMemberId, message, statusCode, function(err,result){
@@ -297,7 +304,7 @@ var isLocationInvaild = false;
          
           //checkLocation
           if(isCheckLocation && !isLocationInvaild){
-          	console.log('--- async.waterfall checkMember #3 ---');
+          	console.log('--- async.waterfall checkMember #3-1 ---');
           	peopleTree.checkLocation(groupMemberId, parentGroupMemberId, manageMode, function(err,result){
 				if(!err){
 					console.log("/checkLocation : "+ JSON.stringify(result));
@@ -309,7 +316,7 @@ var isLocationInvaild = false;
 			});
           }
           else if(isCheckLocation) {
-          	  console.log('--- async.waterfall checkMember #3 ---');
+          	  console.log('--- async.waterfall checkMember #3-2 ---');
 	      	  peopleTree.checkInvalidLocation(groupMemberId, parentGroupMemberId, function(err,result){
 				  if(!err){
 					  console.log("/checkInvalidLocation : "+ result);

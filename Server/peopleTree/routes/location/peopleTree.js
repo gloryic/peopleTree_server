@@ -1401,6 +1401,8 @@ PeopleTree.prototype.push = function(from, to, message, statusCode, f) {
         console.log("userName : "+userName);//값 하나만 가져온다. 키 없이 값만
         if(!err){
           if(userName){
+
+
             var notification = {
                                   where : {
                                             "deviceType": "android",
@@ -1419,10 +1421,16 @@ PeopleTree.prototype.push = function(from, to, message, statusCode, f) {
 
             parse.sendPush(notification, function(err, resp){
               console.log("to : "+ to+" / "+JSON.stringify(resp));
-              
-              if(!err) return f(null,resp.result);
-              else return f(err,null)
+              if(!err) console.log(resp.result);
+              else{
+                parse.sendPush(notification, function(err, resp){
+                  if(!err) console.log(resp.result);
+                  else console.log(err.message);
+                });
+              }
             });
+
+            return f(null,"push sent");
           }
           else f("from user not login",null);
         }
@@ -1510,18 +1518,17 @@ PeopleTree.prototype.gatherChildren = function(groupMemberId, depth, f) {
     peopleTree.getChildren(_groupMemberId,function(err, childrenArray, length){
       depth--;
       console.log("childrenArray"+ JSON.stringify(childrenArray));
-
-      endIndex += length-1;
-
+      endIndex += (length);
       _.each(childrenArray, function (item) {
           gatherArr.push(item);
       });
-      console.log("gatherArr"+ JSON.stringify(gatherArr));
 
-      _groupMemberId = gatherArr[++startIndex];
+      if(gatherArr[startIndex+1] != null)
+        _groupMemberId = gatherArr[++startIndex];
+      else
+        ++startIndex;
 
       next();
-
     });
   },
   function (err) {
@@ -1543,6 +1550,81 @@ PeopleTree.prototype.getChildren = function(groupMemberId, f) {
           childrenArray.push(parseInt(child));
         });
         return f(null,childrenArray,length);
+      }
+      else return f(err.message,null,null);
+    });
+}
+
+
+PeopleTree.prototype.showTreeV2 = function(groupMemberId, f) {
+
+  var startIndex=-1;
+  var endIndex=0;
+  var gatherArr=[];
+
+  var _groupMemberId = groupMemberId;
+
+  async.whilst(function () {
+    return (startIndex <= endIndex);
+  },
+  function (next) {
+
+    peopleTree.showTreeV2_sub(_groupMemberId,function(err, childrenArray, length){
+      console.log("childrenArray"+ JSON.stringify(childrenArray));
+
+      endIndex += length;
+
+      _.each(childrenArray, function (item) {
+          gatherArr.push(item);
+      });
+
+      if(gatherArr[startIndex+1] != null)
+        _groupMemberId = gatherArr[++startIndex].key;
+      else
+        ++startIndex;
+
+      next();
+
+    });
+  },
+  function (err) {
+    return f(null,gatherArr);
+  });
+}
+
+PeopleTree.prototype.showTreeV2_sub = function(groupMemberId, f) {
+
+    var childrenArray = [];
+    var length = 0;
+
+    tree.lrange('L/'+groupMemberId, 2, -1, function (err, children) {
+
+      if(!err){ 
+        length = children.length;
+        console.log('children.length : '+length);
+
+        var count = 0;
+
+        async.whilst(function () {
+          return length > count;
+        },
+        function (next) {
+          peopleTree.getItems(children[count], function(err, obj){
+            childrenArray.push(   { 
+                                    key :parseInt(obj.groupMemberId),
+                                    parent : parseInt(groupMemberId),
+                                    manageMode : obj.manageMode,
+                                    accumulateWarning : obj.accumulateWarning,
+                                    name: obj.userName
+                                  }   
+                              );
+            count++;
+            next();
+          });
+        },
+        function (err) {
+           return f(null,childrenArray,length);
+        });
       }
       else return f(err.message,null,null);
     });
