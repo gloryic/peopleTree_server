@@ -68,20 +68,20 @@ app.use(function(req, res, next) {
     next(err);
 });
 
-
-//global.baseURL = '210.118.74.107:3000';
-global.baseURL = '210.118.74.230:5033';
+global.baseURL = '210.118.74.107:3000';
+//lobal.baseURL = '210.118.74.230:5033';
+//JUYOUNGKWANG-PC
 
 var dbConfig = {
-  host:'210.118.74.230',
+  host:'210.118.74.107',
   port: 3306,
-  user: 'JUYOUNGKWANG-PC',
+  user: 'root',
   password:'1234',
   database:'peopletree'
 };
 
 var APP_ID = 'sDGocHwgCiClL6qWbc2sOZzDbHtg6JCWWmhGZWIj';
-var MASTER_KEY = 'duCyKVemL81eRxYzCrvrdGlIHUDFuNFIoTH9Idma';
+var MASTER_KEY = 'yyF56vK3wjZIyAEEZCzaYZ85COUdbaeHQwRQsFwM';
 global.parse = new Parse(APP_ID, MASTER_KEY);
 
 

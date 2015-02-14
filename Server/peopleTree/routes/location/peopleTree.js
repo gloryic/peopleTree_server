@@ -320,7 +320,7 @@ PeopleTree.prototype.affectAllParents = function(groupMemberId, number, isStray,
 
           console.log("curParent : "+curParent);
           tree.hget("H/"+curParent,'managingNumber',function(err,managingNumber){
-              if(managingNumber > 0 || number >= 0){
+              if(managingNumber > 0 || number > 0){
                 tree.hincrby("H/"+curParent, "managingNumber", number, function(err,obj){
                    if(err) console.log(err.message);
                 });
@@ -328,7 +328,7 @@ PeopleTree.prototype.affectAllParents = function(groupMemberId, number, isStray,
           });
           if(!isStray){
             tree.hget("H/"+curParent,'managingTotalNumber',function(err,managingTotalNumber){
-                if(managingTotalNumber > 0 || number >= 0){
+                if(managingTotalNumber > 0 || number > 0){
                   console.log("isStray : "+isStray);
                   tree.hincrby("H/"+curParent, "managingTotalNumber", number, function(err,obj){
                      if(err) console.log(err.message);
@@ -933,7 +933,7 @@ PeopleTree.prototype.getLocationForFp = function(groupMemberId, f){
   tree.hmget('H/'+groupMemberId, 'latitude', 'longitude', 'fpId', function(err,obj){
     console.log(obj.length);
     if(!err){
-      if(obj.length==2) return f(null, {latitude:parseFloat(obj[0]), longitude:parseFloat(obj[1]),  fpId:parseFloat(obj[2])} );
+      if(obj.length==3) return f(null, { latitude:parseFloat(obj[0]), longitude:parseFloat(obj[1]),  fpId:parseInt(obj[2]) } );
       else return f("not pair location", null);
     }
     else return f(err.message, null);
@@ -1134,7 +1134,7 @@ PeopleTree.prototype.checkTrackingModeAndAreaMode = function(groupMemberId, pare
         if(radius < distance) validation = false;
 
         //validation==false 면 edgeStatus를 300으로 변경
-        if(!validation){
+        if(!validation&&edgeStatus!=300){
           peopleTree.changeEdgeStatus(groupMemberId, 300, function(err, updateNumber){
             if(!err)
               callback(null, radius, edgeStatus, distance);
@@ -1142,7 +1142,7 @@ PeopleTree.prototype.checkTrackingModeAndAreaMode = function(groupMemberId, pare
               callback({status:400, errorDesc: err}, null);
           });
         }
-        else if(validation){
+        else if(validation&&edgeStatus!=200){
           peopleTree.changeEdgeStatus(groupMemberId, 200, function(err, updateNumber){
             if(!err)
               callback(null, radius, edgeStatus, distance);
@@ -1207,6 +1207,86 @@ PeopleTree.prototype.checkTrackingModeAndAreaMode = function(groupMemberId, pare
 
   });
 }
+
+
+PeopleTree.prototype.setNormar = function(groupMemberId, parentGroupMemberId, f) {
+  console.log("setNormar");
+  //부모의 현재 위치와 나의 위치 거리가 부모가 설정한 반경 안에 있어야한다.
+
+  var validation = true;
+
+  async.waterfall([
+
+      function(callback){
+        console.log('--- async.waterfall setNormar Node #4 ---');
+        tree.hget("H/"+groupMemberId,'edgeStatus',function(err,edgeStatus){
+          console.log("edgeStatus : "+edgeStatus);//값 하나만 가져온다. 키 없이 값만
+          if(!err)
+            callback(null,parseInt(edgeStatus));
+          else
+            callback({status:400, errorDesc: err.message},null);
+        });
+      },
+
+      function(edgeStatus, callback){
+        console.log('--- async.waterfall setNormar Node #5 ---');
+  
+   
+          peopleTree.changeEdgeStatus(groupMemberId, 200, function(err, updateNumber){
+            if(!err)
+              callback(null, edgeStatus);
+            else
+              callback({status:400, errorDesc: err}, null);
+          });
+
+      },
+
+      function(edgeStatus, callback){
+        console.log('--- async.waterfall setNormar Node #6 ---');
+
+        console.log("!validation&&edgeStatus" + validation + "/" +edgeStatus);
+        if(!validation&&edgeStatus!=300){
+          peopleTree.affectAllParents(groupMemberId, -1, true, function(err,result){
+            if(!err) callback(null);
+            else callback({status:400, errorDesc: err}, null);
+          });
+        }
+        else if(validation&&edgeStatus!=200){
+          peopleTree.affectAllParents(groupMemberId, 1, true, function(err,result){
+            if(!err) callback(null);
+            else callback({status:400, errorDesc: err}, null);
+          });
+        }
+        else
+          callback(null);        
+      },
+
+      function(callback){
+        console.log('--- async.waterfall setNormar Node #7 ---');
+
+          //true면 accumulateWarning을 0으로 리셋
+          peopleTree.accumulateWarning(groupMemberId, true, function(err,accumulateWarning){
+            if(!err)
+              callback(null, {parentManageMode: 230, radius: 0, distance: 0, edgeStatus: 200, validation : validation, accumulateWarning:accumulateWarning});
+            else
+              callback({status:400, errorDesc: err}, null);
+          });
+        
+      },
+  ],
+
+  function(err, results) {
+    console.log('--- async.waterfall result setNormar Node #1 ---');
+    console.log(arguments);
+    if(!err)
+      return f(null,results)
+    else{
+      return f(err, null)
+    }
+
+  });
+}
+
 
 //A(x1, y1), B(x2, y2), P(x3, y3)
 PeopleTree.prototype.isPointOnLine = function(A, B, P){
@@ -1583,6 +1663,7 @@ PeopleTree.prototype.showTreeV2 = function(groupMemberId, f) {
 
   var _groupMemberId = groupMemberId;
 
+
   async.whilst(function () {
     return (startIndex <= endIndex);
   },
@@ -1607,7 +1688,24 @@ PeopleTree.prototype.showTreeV2 = function(groupMemberId, f) {
     });
   },
   function (err) {
-    return f(null,gatherArr);
+
+
+      peopleTree.getItems(groupMemberId, function(err, obj){
+        gatherArr.push(   { 
+                                key :parseInt(obj.groupMemberId),
+                                parent : parseInt(groupMemberId),
+                                manageMode : obj.manageMode,
+                                accumulateWarning : obj.accumulateWarning,
+                                name: obj.userName
+                              }   
+                          );
+
+        return f(null,gatherArr);
+
+      });
+
+
+
   });
 }
 
