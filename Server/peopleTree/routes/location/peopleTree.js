@@ -1744,22 +1744,21 @@ PeopleTree.prototype.showTreeV2 = function(groupMemberId, f) {
   },
   function (err) {
 
-
       peopleTree.getItems(groupMemberId, function(err, obj){
         gatherArr.push(   { 
                                 key :parseInt(obj.groupMemberId),
                                 parent : parseInt(groupMemberId),
                                 manageMode : obj.manageMode,
                                 accumulateWarning : obj.accumulateWarning,
-                                name: obj.userName
+                                name: obj.userName,
+                                managingNumber : parseInt(obj.managingNumber),
+                                managingTotalNumber : parseInt(obj.managingTotalNumber)
                               }   
                           );
 
         return f(null,gatherArr);
 
       });
-
-
 
   });
 }
@@ -1785,9 +1784,11 @@ PeopleTree.prototype.showTreeV2_sub = function(groupMemberId, f) {
             childrenArray.push(   { 
                                     key :parseInt(obj.groupMemberId),
                                     parent : parseInt(groupMemberId),
-                                    manageMode : obj.manageMode,
-                                    accumulateWarning : obj.accumulateWarning,
-                                    name: obj.userName
+                                    manageMode : parseInt(obj.manageMode),
+                                    accumulateWarning : parseInt(obj.accumulateWarning),
+                                    name: obj.userName,
+                                    managingNumber : parseInt(obj.managingNumber),
+                                    managingTotalNumber : parseInt(obj.managingTotalNumber)
                                   }   
                               );
             count++;
