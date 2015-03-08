@@ -155,7 +155,7 @@ PeopleTree.prototype.isValidChange = function(groupMemberId, parentGroupMemberId
 }
 
 PeopleTree.prototype.changeParent = function(groupMemberId, parentGroupMemberId, f) {
-
+  var managingNumber = 0;
   peopleTree.isValidChange(groupMemberId,parentGroupMemberId, function(err,valid){
 
     if(valid){
@@ -217,7 +217,10 @@ PeopleTree.prototype.changeParent = function(groupMemberId, parentGroupMemberId,
           //부모가 바뀌기전 부모의 관리 인원 정보를 업데이트.
           //내가 관리하고 있는 전체 인원(totalManageMember)의 수+1(자기 자신 포함)을 뺀다.
           if(groupMemberId != myData.parentGroupMemberId){
-            peopleTree.affectAllParents(groupMemberId, -1*(parseInt(myData.managingTotalNumber)+1), false, function(err,result){
+
+            managingNumber = parseInt(myData.edgeStatus) == 200 ? -1*(parseInt(myData.managingNumber)+1) : -1*(parseInt(myData.managingNumber));
+
+            peopleTree.affectAllParents(groupMemberId, -1*(parseInt(myData.managingTotalNumber)+1), managingNumber, function(err,result){
               if(!err)
                 callback(null,myData,parentData);
               else
@@ -258,7 +261,10 @@ PeopleTree.prototype.changeParent = function(groupMemberId, parentGroupMemberId,
           console.log('--- async.waterfall changeParent #6 ---');
           //부모가 변경되고 부모의 관리 인원 정보를 업데이트.
           //내가 관리하고 있는 전체 인원의 수+1을 더한다.  
-          peopleTree.affectAllParents(groupMemberId, (parseInt(myData.managingTotalNumber)+1), false, function(err,result){
+
+          managingNumber = parseInt(myData.edgeStatus) == 200 ? (parseInt(myData.managingNumber)+1) : (parseInt(myData.managingNumber));
+
+          peopleTree.affectAllParents(groupMemberId, (parseInt(myData.managingTotalNumber)+1), managingNumber, function(err,result){
             if(!err)
               callback(null);
             else
@@ -292,7 +298,62 @@ PeopleTree.prototype.changeParent = function(groupMemberId, parentGroupMemberId,
   });
 }
 
-PeopleTree.prototype.affectAllParents = function(groupMemberId, number, isStray, f) {
+PeopleTree.prototype.affectAllParents = function(groupMemberId, totalNumber, number, f) {
+
+  //부모의 관리 인원 정보를 업데이트. 내가 관리 하고 있는 인원 + 1(나)
+  //groupMemberId의 부모로 시작해서 (accumulWarning-1) 위의 부모 만큼 푸시를 준다.
+ 
+
+  var curParent = groupMemberId;
+  var pastParent = -1;
+  var valid = true;
+  var pushArray = [];
+
+  async.whilst(function () {
+    console.log(curParent+"=="+pastParent);
+    if(curParent==pastParent)
+      valid=false;
+
+    return valid;
+  },
+  function (next) {
+      tree.lindex("L/"+curParent,1,function(err,parentId){
+
+        pastParent = curParent;
+        curParent = parentId;
+
+        if(curParent!=pastParent){
+          console.log("curParent : "+curParent);
+          pushArray.push(parseInt(curParent));
+          
+          tree.hget("H/"+curParent,'managingNumber',function(err,managingNumber){
+              managingNumber = parseInt(managingNumber);
+              if(managingNumber > -1 && managingNumber + number > -1){
+                tree.hincrby("H/"+curParent, "managingNumber", number, function(err,obj){
+                   if(err) console.log(err.message);
+                });
+              }
+          });
+
+          tree.hget("H/"+curParent,'managingTotalNumber',function(err,managingTotalNumber){
+              managingTotalNumber = parseInt(managingTotalNumber);
+              if(managingTotalNumber > -1 && managingTotalNumber + totalNumber > -1){
+                tree.hincrby("H/"+curParent, "managingTotalNumber", totalNumber, function(err,obj){
+                   if(err) console.log(err.message);
+                });
+              }
+          });
+        }
+        next();
+      });
+  },
+  function (err) {
+    console.log(pushArray.length);
+    return f(err,pushArray);
+  });
+}
+
+PeopleTree.prototype.affectAllParentsAboutManagingNumber = function(groupMemberId, number, f) {
 
   //부모의 관리 인원 정보를 업데이트. 내가 관리 하고 있는 인원 + 1(나)
   //groupMemberId의 부모로 시작해서 (accumulWarning-1) 위의 부모 만큼 푸시를 준다.
@@ -320,22 +381,13 @@ PeopleTree.prototype.affectAllParents = function(groupMemberId, number, isStray,
 
           console.log("curParent : "+curParent);
           tree.hget("H/"+curParent,'managingNumber',function(err,managingNumber){
-              if(managingNumber > 0 || number > 0){
+              managingNumber = parseInt(managingNumber);
+              if(managingNumber > -1 && managingNumber + number > -1){
                 tree.hincrby("H/"+curParent, "managingNumber", number, function(err,obj){
                    if(err) console.log(err.message);
                 });
               }
           });
-          if(!isStray){
-            tree.hget("H/"+curParent,'managingTotalNumber',function(err,managingTotalNumber){
-                if(managingTotalNumber > 0 || number > 0){
-                  console.log("isStray : "+isStray);
-                  tree.hincrby("H/"+curParent, "managingTotalNumber", number, function(err,obj){
-                     if(err) console.log(err.message);
-                  });
-                }
-            });
-          }
         }
         next();
       });
@@ -367,7 +419,7 @@ PeopleTree.prototype.setManageNumber = function(groupMemberId, managingTotalNumb
 }
 
 PeopleTree.prototype.outGroup = function(groupMemberId, f) {
-
+      var managingNumber = 0;
       async.waterfall([
 
         function (callback) {
@@ -411,7 +463,9 @@ PeopleTree.prototype.outGroup = function(groupMemberId, f) {
           console.log('--- async.waterfall outGroup #3 ---');
           //부모가 바뀌기전 부모의 관리 인원 정보를 업데이트.
           //내가 관리하고 있는 전체 인원의 수+1을 뺀다 
-          peopleTree.affectAllParents(groupMemberId, -1*(parseInt(myData.managingTotalNumber)+1), false, function(err,result){
+          managingNumber = parseInt(myData.edgeStatus) == 200 ? -1*(parseInt(myData.managingNumber)+1) : -1*(parseInt(myData.managingNumber));
+
+          peopleTree.affectAllParents(groupMemberId, -1*(parseInt(myData.managingTotalNumber)+1), managingNumber, function(err,result){
             if(!err)
               callback(null);
             else
@@ -456,7 +510,7 @@ PeopleTree.prototype.outGroup = function(groupMemberId, f) {
 }
 
 PeopleTree.prototype.deleteNode = function(groupMemberId, f) {
-
+  var managingNumber = 0;
   async.waterfall([
       
       //부모 아이디 가져오기
@@ -587,7 +641,8 @@ PeopleTree.prototype.deleteNode = function(groupMemberId, f) {
         console.log('--- async.waterfall delete Node #5 ---');
         //부모가 바뀌기전 부모의 관리 인원 정보를 업데이트.
         if(deleteNumber){
-          peopleTree.affectAllParents(groupMemberId, -1, false, function(err,result){
+          managingNumber = parseInt(myData.edgeStatus) == 200 ? -1 : 0;
+          peopleTree.affectAllParents(groupMemberId, -1, managingNumber, function(err,result){
             if(!err)
               callback(null, deleteNumber);
             else
@@ -1005,7 +1060,7 @@ PeopleTree.prototype.checkInvalidLocation = function(groupMemberId, parentGroupM
         //부모의 관리 인원 중 나를 감소시킨다.
 
         if(edgeStatus!=300){
-          peopleTree.affectAllParents(groupMemberId, -1, true, function(err,result){
+          peopleTree.affectAllParentsAboutManagingNumber(groupMemberId, -1, function(err,result){
             if(!err) callback(null);
             else callback({status:400, errorDesc: err}, null);
           });
@@ -1160,14 +1215,14 @@ PeopleTree.prototype.checkTrackingModeAndAreaMode = function(groupMemberId, pare
 
         if(!validation&&edgeStatus!=300){
           console.log("ok->not ok");
-          peopleTree.affectAllParents(groupMemberId, -1, true, function(err,result){
+          peopleTree.affectAllParentsAboutManagingNumber(groupMemberId, -1, function(err,result){
             if(!err) callback(null, radius, distance);
             else callback({status:400, errorDesc: err}, null);
           });
         }
         else if(validation&&edgeStatus!=200){
           console.log("not ok->ok");
-          peopleTree.affectAllParents(groupMemberId, 1, true, function(err,result){
+          peopleTree.affectAllParentsAboutManagingNumber(groupMemberId, 1, function(err,result){
             if(!err) callback(null, radius, distance);
             else callback({status:400, errorDesc: err}, null);
           });
@@ -1246,13 +1301,13 @@ PeopleTree.prototype.setNormal = function(groupMemberId, parentGroupMemberId, f)
 
         console.log("!validation&&edgeStatus" + validation + "/" +edgeStatus);
         if(!validation&&edgeStatus!=300){
-          peopleTree.affectAllParents(groupMemberId, -1, true, function(err,result){
+          peopleTree.affectAllParentsAboutManagingNumber(groupMemberId, -1, function(err,result){
             if(!err) callback(null);
             else callback({status:400, errorDesc: err}, null);
           });
         }
         else if(validation&&edgeStatus!=200){
-          peopleTree.affectAllParents(groupMemberId, 1, true, function(err,result){
+          peopleTree.affectAllParentsAboutManagingNumber(groupMemberId, 1, function(err,result){
             if(!err) callback(null);
             else callback({status:400, errorDesc: err}, null);
           });
@@ -1440,13 +1495,13 @@ PeopleTree.prototype.checkGeofencingMode = function(groupMemberId, parentGroupMe
       function(validation, edgeStatus, callback){
         console.log('--- async.waterfall checkTrackingModeAndAreaMode Node #5 ---');
         if(!validation&&edgeStatus!=300){
-          peopleTree.affectAllParents(groupMemberId, -1, true, function(err,result){
+          peopleTree.affectAllParentsAboutManagingNumber(groupMemberId, -1, function(err,result){
             if(!err) callback(null, validation);
             else callback({status:400, errorDesc: err}, null);
           });
         }
         else if(validation&&edgeStatus!=200){
-          peopleTree.affectAllParents(groupMemberId, 1, true, function(err,result){
+          peopleTree.affectAllParentsAboutManagingNumber(groupMemberId, 1, function(err,result){
             if(!err) callback(null, validation);
             else callback({status:400, errorDesc: err}, null);
           });
