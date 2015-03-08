@@ -215,11 +215,11 @@ PeopleTree.prototype.changeParent = function(groupMemberId, parentGroupMemberId,
         function (myData, parentData, callback) {
           console.log('--- async.waterfall changeParent #4 ---');
           //부모가 바뀌기전 부모의 관리 인원 정보를 업데이트.
-          //내가 관리하고 있는 전체 인원의 수+1을 뺀다 
+          //내가 관리하고 있는 전체 인원(totalManageMember)의 수+1(자기 자신 포함)을 뺀다.
           if(groupMemberId != myData.parentGroupMemberId){
             peopleTree.affectAllParents(groupMemberId, -1*(parseInt(myData.managingTotalNumber)+1), false, function(err,result){
               if(!err)
-                callback(null,myData, parentData);
+                callback(null,myData,parentData);
               else
                 callback(err.message,null);
             });
@@ -233,7 +233,7 @@ PeopleTree.prototype.changeParent = function(groupMemberId, parentGroupMemberId,
           //1. 나의 부모를 변경
           //2. 나의 그룹 아이디를 변경
           //3. 초기화
-          var items = {groupId:parentData.groupId, parentGroupMemberId:parentGroupMemberId, edgeStatus:100, accumulateWarning : 0};
+          var items = {groupId:parentData.groupId, parentGroupMemberId:parentGroupMemberId, edgeStatus:200, accumulateWarning : 0};
           console.log("myChangeParent : "+JSON.stringify(items));
           tree.hmset("H/"+groupMemberId, items, function(err,obj){
             if(!err)
@@ -425,7 +425,7 @@ PeopleTree.prototype.outGroup = function(groupMemberId, f) {
           //1. 나의 부모를 변경
           //2. 나의 그룹 아이디를 변경
           //3. 초기화 
-          var items = {groupId:0, parentGroupMemberId:groupMemberId, edgeStatus:100, accumulateWarning : 0};
+          var items = {groupId:0, parentGroupMemberId:groupMemberId, edgeStatus:200, accumulateWarning : 0};
           tree.hmset("H/"+groupMemberId, items, function(err,obj){
             if(!err)
               callback(null);
@@ -969,7 +969,7 @@ PeopleTree.prototype.checkLocation = function(groupMemberId, parentGroupMemberId
     return f(null, {status:200, responseData : "manageMode is 200(nothing Mode)"});
 }
 
-
+//핑거 프린트용 함수
 PeopleTree.prototype.checkInvalidLocation = function(groupMemberId, parentGroupMemberId, parentManageMode, f) {
 
   async.waterfall([
@@ -1133,7 +1133,7 @@ PeopleTree.prototype.checkTrackingModeAndAreaMode = function(groupMemberId, pare
 
         if(radius < distance) validation = false;
 
-        //validation==false 면 edgeStatus를 300으로 변경
+        //validation==false이고 300이 아니라면, edgeStatus를 300으로 변경
         if(!validation&&edgeStatus!=300){
           peopleTree.changeEdgeStatus(groupMemberId, 300, function(err, updateNumber){
             if(!err)
@@ -1156,21 +1156,26 @@ PeopleTree.prototype.checkTrackingModeAndAreaMode = function(groupMemberId, pare
 
       function(radius, edgeStatus, distance, callback){
         console.log('--- async.waterfall checkTrackingModeAndAreaMode Node #6 ---');
-        console.log("!validation&&edgeStatus" + validation + "/" +edgeStatus);
+        //console.log("!validation&&edgeStatus" + validation + "/" +edgeStatus);
+
         if(!validation&&edgeStatus!=300){
+          console.log("ok->not ok");
           peopleTree.affectAllParents(groupMemberId, -1, true, function(err,result){
             if(!err) callback(null, radius, distance);
             else callback({status:400, errorDesc: err}, null);
           });
         }
         else if(validation&&edgeStatus!=200){
+          console.log("not ok->ok");
           peopleTree.affectAllParents(groupMemberId, 1, true, function(err,result){
             if(!err) callback(null, radius, distance);
             else callback({status:400, errorDesc: err}, null);
           });
         }
-        else
-          callback(null, radius, distance);        
+        else{
+          console.log("not ok->not ok OR ok->ok");
+          callback(null, radius, distance);
+        }
       },
 
       function(radius, distance, callback){
@@ -1209,16 +1214,13 @@ PeopleTree.prototype.checkTrackingModeAndAreaMode = function(groupMemberId, pare
 }
 
 
-PeopleTree.prototype.setNormar = function(groupMemberId, parentGroupMemberId, f) {
-  console.log("setNormar");
-  //부모의 현재 위치와 나의 위치 거리가 부모가 설정한 반경 안에 있어야한다.
-
+PeopleTree.prototype.setNormal = function(groupMemberId, parentGroupMemberId, f) {
+  console.log("setNormal");
   var validation = true;
 
   async.waterfall([
-
       function(callback){
-        console.log('--- async.waterfall setNormar Node #4 ---');
+        console.log('--- async.waterfall setNormal Node #4 ---');
         tree.hget("H/"+groupMemberId,'edgeStatus',function(err,edgeStatus){
           console.log("edgeStatus : "+edgeStatus);//값 하나만 가져온다. 키 없이 값만
           if(!err)
@@ -1229,9 +1231,7 @@ PeopleTree.prototype.setNormar = function(groupMemberId, parentGroupMemberId, f)
       },
 
       function(edgeStatus, callback){
-        console.log('--- async.waterfall setNormar Node #5 ---');
-  
-   
+        console.log('--- async.waterfall setNormal Node #5 ---');
           peopleTree.changeEdgeStatus(groupMemberId, 200, function(err, updateNumber){
             if(!err)
               callback(null, edgeStatus);
@@ -1242,7 +1242,7 @@ PeopleTree.prototype.setNormar = function(groupMemberId, parentGroupMemberId, f)
       },
 
       function(edgeStatus, callback){
-        console.log('--- async.waterfall setNormar Node #6 ---');
+        console.log('--- async.waterfall setNormal Node #6 ---');
 
         console.log("!validation&&edgeStatus" + validation + "/" +edgeStatus);
         if(!validation&&edgeStatus!=300){
@@ -1262,7 +1262,7 @@ PeopleTree.prototype.setNormar = function(groupMemberId, parentGroupMemberId, f)
       },
 
       function(callback){
-        console.log('--- async.waterfall setNormar Node #7 ---');
+        console.log('--- async.waterfall setNormal Node #7 ---');
 
           //true면 accumulateWarning을 0으로 리셋
           peopleTree.accumulateWarning(groupMemberId, true, function(err,accumulateWarning){
@@ -1276,7 +1276,7 @@ PeopleTree.prototype.setNormar = function(groupMemberId, parentGroupMemberId, f)
   ],
 
   function(err, results) {
-    console.log('--- async.waterfall result setNormar Node #1 ---');
+    console.log('--- async.waterfall result setNormal Node #1 ---');
     console.log(arguments);
     if(!err)
       return f(null,results)

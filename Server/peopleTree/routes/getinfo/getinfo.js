@@ -57,7 +57,7 @@ router.get('/group/member',function(req,res){
 				                    											"userName":data.userName,
 				                    											"groupId":data2.groupId,
 												                                "userPhoneNumber":data.userPhoneNumber,
-												                                "edgeStatus": 100,//data2.edgeStatus, 100 - nothing, 200 - 정상상태, 300- 비정상 
+												                                "edgeStatus": 200,//200 - 정상상태, 300- 비정상 
 												                                "edgeType" : 100,//100 혼자니까 정보 보고관계 
 												                                "manageMode" : 200,//data2.manageMode,  관리자로 시작
 												                                "managedLocationRadius": 0,//data2.managedLocationRadius,

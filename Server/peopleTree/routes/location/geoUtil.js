@@ -249,13 +249,13 @@ var isFingerPrint = false;
           	isFingerPrint = true;
           */
 
-
           if(edgeType==100 || manageMode==200){
           	isCheckLocation = false;
           }
 
-          if (statusCode == 2048)
-          	callback(null);
+          if (statusCode == 2048){
+          	//noting
+          }
           else{
           	if(parseInt(statusCode&2049) == 2049){
           		console.log(statusCode&2049);
@@ -298,7 +298,8 @@ var isFingerPrint = false;
           
           //setLocation
           if(!isLocationInvaild){
-          	console.log('--- async.waterfall checkMember #2 ---');
+          	  console.log('--- async.waterfall checkMember #2 ---');
+
 	      	  peopleTree.setLocation(groupMemberId, latitude, longitude, fpId, function(err,result){
 				  if(!err){
 					  console.log("/setLocation : "+ result);
@@ -308,18 +309,19 @@ var isFingerPrint = false;
 				  else
 					  callback(err,null);
 			  });
-	      	}
-	      else{
-	      	callback(null);
 	      }
+	      else
+	      	callback(null);
+	      
         },
+
         function (callback) {
          console.log('--- async.waterfall checkMember #2-1 ---');
           //checkLocation
           /*
           if(groupMemberId != parentGroupMemberId){
           	console.log("fingerprint in");
-	          
+	   
 
 	          if(isFingerPrint){
 
@@ -361,7 +363,7 @@ var isFingerPrint = false;
 		          			}
 		          			else{
 		          				//정상
-		          				peopleTree.setNormar(groupMemberId, parentGroupMemberId, function(err,result){
+		          				peopleTree.setNormal(groupMemberId, parentGroupMemberId, function(err,result){
 
 		          					if(!err)
 		          						callback(null, {parentManageMode: manageMode, radius: -1, distance: -1, edgeStatus: 200, validation : true, accumulateWarning : 0});
