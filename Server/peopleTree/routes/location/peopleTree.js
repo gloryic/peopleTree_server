@@ -464,7 +464,6 @@ PeopleTree.prototype.outGroup = function(groupMemberId, f) {
           //부모가 바뀌기전 부모의 관리 인원 정보를 업데이트.
           //내가 관리하고 있는 전체 인원의 수+1을 뺀다 
           managingNumber = parseInt(myData.edgeStatus) == 200 ? -1*(parseInt(myData.managingNumber)+1) : -1*(parseInt(myData.managingNumber));
-
           peopleTree.affectAllParents(groupMemberId, -1*(parseInt(myData.managingTotalNumber)+1), managingNumber, function(err,result){
             if(!err)
               callback(null);

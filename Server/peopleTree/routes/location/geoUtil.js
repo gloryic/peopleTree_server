@@ -314,15 +314,12 @@ var isFingerPrint = false;
         },
 
         function (callback) {
-
           //핑거프린터를 사용할때
           if(isFingerPrint){
           		console.log('--- async.waterfall checkMember #4-1, fingerprint ---');
-
 	          	peopleTree.getLocationForFp(groupMemberId, function(err, myData){
-
 		          	peopleTree.getLocationForFp(parentGroupMemberId, function(err, parentData){
-		          		//나와 부모의 fpID를 가져와 비교한다.
+		          		//나와 부모의 fpId를 가져와 비교한다.
 		          		console.log("myData.fpId / parentData.fpId -> "+ myData.fpId + "/" + parentData.fpId);
 
 		          		if(myData.fpId != parentData.fpId){
@@ -343,10 +340,10 @@ var isFingerPrint = false;
 	          				var myFpFirstNum = parseInt(myData.latitude/100);
 	          				var parentFpFirstNum =  parseInt(parentData.latitude/100);
 
-	          				console.log("myFpFirstNum and parentFpFirstNum" + myFpFirstNum + " / " + parentFpFirstNum);
+	          				console.log("myFpFirstNum / parentFpFirstNum ->" + myFpFirstNum + " / " + parentFpFirstNum);
 
 		          			if (myFpFirstNum != parentFpFirstNum ){
-		          				//실내모드에서 같은 fpID를 같지만 거리가 멀리 떨어졌을때
+		          				//실내모드에서 같은 fpId를 같지만 거리가 멀리 떨어졌을때
 		          				peopleTree.checkInvalidLocation(groupMemberId, parentGroupMemberId, manageMode, function(err,result){
 									  if(!err){
 										  console.log("/checkInvalidLocation : "+ result);
@@ -358,7 +355,7 @@ var isFingerPrint = false;
 								 });
 		          			}
 		          			else{
-		          				//같은 fpID를 갖으며, 거리 내에도 있다. 즉 정상.
+		          				//같은 fpId를 갖으며, 거리 내에도 있다. 즉 정상.
 		          				peopleTree.setNormal(groupMemberId, parentGroupMemberId, function(err,result){
 		          					if(!err)
 		          						callback(null, {parentManageMode: manageMode, radius: -1, distance: -1, edgeStatus: 200, validation : true, accumulateWarning : 0});

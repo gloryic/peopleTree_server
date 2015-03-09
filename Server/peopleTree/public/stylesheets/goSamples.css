@@ -34,7 +34,7 @@ pre {
 
 #sample {
   margin-left: 20px;
-  margin-top: 100px;
+  margin-top: 20px;
 }
 
 #menu {
@@ -59,7 +59,7 @@ pre {
 #toggleButton {
     font-family: fantasy;
     font-size: 32px;
-    margin-left: 40px;
+    margin-left: 34px;
     background: #346DE8;
     cursor: pointer;
     border-top: solid 2px #eaeaea;
@@ -72,7 +72,7 @@ pre {
 #toggleButton.down {
     font-family: fantasy;
     font-size: 32px;
-    margin-left: 40px;
+    margin-left: 34px;
     background: #E83456;
     border-top: solid 2px #777;
     border-left: solid 2px #777;
