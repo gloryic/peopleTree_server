@@ -56,6 +56,31 @@ pre {
   line-height: 1.3em;
 }
 
+#toggleButton {
+    font-family: fantasy;
+    font-size: 32px;
+    margin-left: 40px;
+    background: #346DE8;
+    cursor: pointer;
+    border-top: solid 2px #eaeaea;
+    border-left: solid 2px #eaeaea;
+    border-bottom: solid 2px #777;
+    border-right: solid 2px #777;
+    text-decoration:none;
+}
+
+#toggleButton.down {
+    font-family: fantasy;
+    font-size: 32px;
+    margin-left: 40px;
+    background: #E83456;
+    border-top: solid 2px #777;
+    border-left: solid 2px #777;
+    border-bottom:solid 2px  #eaeaea;
+    border-right: solid 2px #eaeaea;
+    text-decoration:none;
+}
+
 a { text-decoration: none; }
 a:hover { text-decoration: underline; }
 

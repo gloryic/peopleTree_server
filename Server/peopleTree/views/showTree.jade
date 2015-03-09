@@ -13,5 +13,18 @@ html
   body
     #sample
       #myDiagram(style='background-color: white; width: 100%; height: 500px')
+    a#toggleButton(title='button') Start
   script.
-    viewTree.init(!{id});
+    viewTree.init(!{userName});
+    $('#toggleButton').click(function(){
+        $(this).toggleClass("down");
+
+        if($(this).hasClass( "down" )){
+          $(this).text("Stop");
+          clearTimeout(window._polling);
+        }
+        else{
+          $(this).text("Start");
+          viewTree.getTreeData(2000);
+        }
+    });

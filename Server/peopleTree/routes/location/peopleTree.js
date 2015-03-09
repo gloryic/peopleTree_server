@@ -974,7 +974,6 @@ PeopleTree.prototype.setLocation = function(groupMemberId, latitude, longitude, 
 
 PeopleTree.prototype.getLocation = function(groupMemberId, f){
   tree.hmget('H/'+groupMemberId, 'latitude', 'longitude', function(err,obj){
-    console.log(obj.length);
     if(!err){
       if(obj.length==2) return f(null, {latitude:parseFloat(obj[0]), longitude:parseFloat(obj[1])} );
       else return f("not pair location", null);
@@ -986,7 +985,6 @@ PeopleTree.prototype.getLocation = function(groupMemberId, f){
 
 PeopleTree.prototype.getLocationForFp = function(groupMemberId, f){
   tree.hmget('H/'+groupMemberId, 'latitude', 'longitude', 'fpId', function(err,obj){
-    console.log(obj.length);
     if(!err){
       if(obj.length==3) return f(null, { latitude:parseFloat(obj[0]), longitude:parseFloat(obj[1]),  fpId:parseInt(obj[2]) } );
       else return f("not pair location", null);
@@ -1268,7 +1266,6 @@ PeopleTree.prototype.checkTrackingModeAndAreaMode = function(groupMemberId, pare
   });
 }
 
-
 PeopleTree.prototype.setNormal = function(groupMemberId, parentGroupMemberId, f) {
   console.log("setNormal");
   var validation = true;
@@ -1293,13 +1290,10 @@ PeopleTree.prototype.setNormal = function(groupMemberId, parentGroupMemberId, f)
             else
               callback({status:400, errorDesc: err}, null);
           });
-
       },
 
       function(edgeStatus, callback){
         console.log('--- async.waterfall setNormal Node #6 ---');
-
-        console.log("!validation&&edgeStatus" + validation + "/" +edgeStatus);
         if(!validation&&edgeStatus!=300){
           peopleTree.affectAllParentsAboutManagingNumber(groupMemberId, -1, function(err,result){
             if(!err) callback(null);
@@ -1319,7 +1313,6 @@ PeopleTree.prototype.setNormal = function(groupMemberId, parentGroupMemberId, f)
       function(callback){
         console.log('--- async.waterfall setNormal Node #7 ---');
 
-          //true면 accumulateWarning을 0으로 리셋
           peopleTree.accumulateWarning(groupMemberId, true, function(err,accumulateWarning){
             if(!err)
               callback(null, {parentManageMode: 230, radius: 0, distance: 0, edgeStatus: 200, validation : validation, accumulateWarning:accumulateWarning});
@@ -1338,10 +1331,8 @@ PeopleTree.prototype.setNormal = function(groupMemberId, parentGroupMemberId, f)
     else{
       return f(err, null)
     }
-
   });
 }
-
 
 //A(x1, y1), B(x2, y2), P(x3, y3)
 PeopleTree.prototype.isPointOnLine = function(A, B, P){
@@ -1745,14 +1736,16 @@ PeopleTree.prototype.showTreeV2 = function(groupMemberId, f) {
   function (err) {
 
       peopleTree.getItems(groupMemberId, function(err, obj){
-        gatherArr.push(   { 
+        gatherArr.push(   
+                              { 
                                 key :parseInt(obj.groupMemberId),
                                 parent : parseInt(groupMemberId),
                                 manageMode : obj.manageMode,
                                 accumulateWarning : obj.accumulateWarning,
                                 name: obj.userName,
                                 managingNumber : parseInt(obj.managingNumber),
-                                managingTotalNumber : parseInt(obj.managingTotalNumber)
+                                managingTotalNumber : parseInt(obj.managingTotalNumber),
+                                userNumber : parseInt(obj.userNumber)
                               }   
                           );
 
@@ -1781,14 +1774,16 @@ PeopleTree.prototype.showTreeV2_sub = function(groupMemberId, f) {
         },
         function (next) {
           peopleTree.getItems(children[count], function(err, obj){
-            childrenArray.push(   { 
+            childrenArray.push(   
+                                  { 
                                     key :parseInt(obj.groupMemberId),
                                     parent : parseInt(groupMemberId),
                                     manageMode : parseInt(obj.manageMode),
                                     accumulateWarning : parseInt(obj.accumulateWarning),
                                     name: obj.userName,
                                     managingNumber : parseInt(obj.managingNumber),
-                                    managingTotalNumber : parseInt(obj.managingTotalNumber)
+                                    managingTotalNumber : parseInt(obj.managingTotalNumber),
+                                    userNumber : parseInt(obj.userNumber)
                                   }   
                               );
             count++;

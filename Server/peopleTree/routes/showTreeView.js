@@ -3,11 +3,11 @@ var router = express.Router();
 
 router.get('/', function(req, res) {
   
-  var groupMemberId = req.query.groupMemberId;
+  var userName = req.query.userName;
 
   res.render('showTree', {
 			title : "peopleTree Viewer",
-			id : groupMemberId
+			userName : "'"+userName+"'"
 	});
 });	
 

@@ -133,4 +133,19 @@ router.get('/showTreeV2', function(req, res) {
 
 });
 
+router.get('/getUserNameFromID',function(req,res){
+
+	var userName = req.query.userName;
+	var queryString = 'SELECT userNumber FROM idinfo WHERE userName=?';
+
+	var query = dbcon.query(queryString,userName,function(err,rows){
+		if(err){
+            	console.log(err);
+            	res.json({status:500, errorDesc : "RDBMS error"});
+        }
+        else
+        	res.json(rows[0].userNumber);
+    });
+});
+
 module.exports = router;
