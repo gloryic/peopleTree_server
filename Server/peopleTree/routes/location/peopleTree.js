@@ -261,10 +261,7 @@ PeopleTree.prototype.changeParent = function(groupMemberId, parentGroupMemberId,
           console.log('--- async.waterfall changeParent #6 ---');
           //부모가 변경되고 부모의 관리 인원 정보를 업데이트.
           //내가 관리하고 있는 전체 인원의 수+1을 더한다.  
-
-          managingNumber = parseInt(myData.edgeStatus) == 200 ? (parseInt(myData.managingNumber)+1) : (parseInt(myData.managingNumber));
-
-          peopleTree.affectAllParents(groupMemberId, (parseInt(myData.managingTotalNumber)+1), managingNumber, function(err,result){
+          peopleTree.affectAllParents(groupMemberId, parseInt(myData.managingTotalNumber)+1, parseInt(myData.managingNumber)+1, function(err,result){
             if(!err)
               callback(null);
             else
@@ -640,12 +637,18 @@ PeopleTree.prototype.deleteNode = function(groupMemberId, f) {
         console.log('--- async.waterfall delete Node #5 ---');
         //부모가 바뀌기전 부모의 관리 인원 정보를 업데이트.
         if(deleteNumber){
-          managingNumber = parseInt(myData.edgeStatus) == 200 ? -1 : 0;
-          peopleTree.affectAllParents(groupMemberId, -1, managingNumber, function(err,result){
-            if(!err)
-              callback(null, deleteNumber);
+          tree.hget("H/"+groupMemberId,'edgeStatus',function(err,edgeStatus){
+            if(!err){
+              managingNumber = parseInt(edgeStatus) == 200 ? -1 : 0;
+              peopleTree.affectAllParents(groupMemberId, -1, managingNumber, function(err,result){
+                if(!err)
+                  callback(null, deleteNumber);
+                else
+                  callback(err.message,null);
+              });
+            }
             else
-              callback(err.message,null);
+              callback({status:400, errorDesc: err.message}, null);
           });
         }
         else

@@ -37,8 +37,25 @@ router.get('/', function(req, res) {
 		    	}
 	    	});
 		  },
+
 		  function(userNumber,callback) {
-		    console.log('--- async.waterfall login #2 ---');
+		  	console.log('--- async.waterfall login #2 ---');
+		  	//재 로그인시 기존의 정보를 삭제한다.
+	        request( {
+	            method: 'GET',
+	            url: 'http://'+baseURL+'/ptree/logout?userNumber='+userNumber,
+	        }, function(err, response) {
+	          if(!err){
+	          	console.log("(already login User - "+JSON.parse(response.body).responseData+")");
+	            callback(null,userNumber);
+	          }
+	          else
+	            callback(err,null);
+	        });		  	
+		  },
+
+		  function(userNumber,callback) {
+		    console.log('--- async.waterfall login #3 ---');
 			peopleTree.insertNode(userNumber,function(err,res){
 				if(!err)
 					callback(null, res);
