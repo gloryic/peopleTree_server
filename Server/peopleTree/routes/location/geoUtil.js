@@ -13,8 +13,11 @@ router.get('/setGeoPoint', function(req, res) {
 
 	var groupMemberId = req.query.groupMemberId;
 	var radius = req.query.radius;
-	var points = JSON.parse(req.query.points);// [{lat:7,lng:4}];
+	var points = JSON.parse(req.query.points);// [{"lat":7,"lng":4}];
 	var manageMode = 0;
+
+	if(radius=="")
+		radius = 0;
 
 	console.log("points : "+JSON.stringify(points));
 	console.log("points.length : "+points.length);
@@ -104,13 +107,28 @@ router.get('/setGeoPoint', function(req, res) {
 router.get('/getGeoPoint', function(req, res) {
 
 	var groupMemberId = req.query.groupMemberId;
-	var radius = req.query.radius;
-	var points = [{lat:7,lng:4}];//req.query.points;//[{}]
+	//var radius = req.query.radius;
+	//var points = [{lat:7,lng:4}];//req.query.points;//[{}]
+	var manageMode = 0;
 
 	peopleTree.getGeoPoint(groupMemberId, function(err,obj){
 		if(!err){
+
+			//radius만 있을때
+			if(obj.length == 1){
+			    if(obj[0] == 0)
+					manageMode = 200;
+				else
+					manageMode = 210;
+			}
+			else if(obj.length == 3)//radius와 점 하나 이상이 있을때
+				manageMode = 220;
+			else
+				manageMode = 230;
+
+
 			console.log("/getGeoPoint : "+ JSON.stringify(obj));
-			res.json({status:200, responseData : obj });
+			res.json({status:200, responseData : {manageMode : manageMode, data : obj} });
 		}
 		else{
 			res.json({status:300, errorDesc : err.message });
@@ -180,7 +198,7 @@ router.get('/checkLocation', function(req, res) {
 /*
 #디바이스 상태 체크 및 위치 기록 및 위치 체크
 #path : POST /ptree/geoutil/checkMember
-#req : int groupMemeberId, int statusCode, double latitude, double longtitude, int fpId, int parentGroupMemberId, int parentManageMode, int edgyType
+#req : int groupMemeberId, int statusCode, double latitude, double longitude, int fpId, int parentGroupMemberId, int parentManageMode, int edgyType
 #res : 
 #e.g : {"status":200,"reponseData":{"radius":4,"distance":220732.02658609525,"edgeStatus":300,"validation":false,"accumulateWarning":1}}
 
@@ -243,7 +261,6 @@ var isFingerPrint = false;
           else if(fpId >= 2)
           	isFingerPrint = true;
           
-
           if(edgeType==100 || manageMode==200)
           	isCheckLocation = false;
 
@@ -310,7 +327,7 @@ var isFingerPrint = false;
           	if(isCheckLocation)
 		      	callback(null);
 	      	else
-	      		callback({status:300, errorDesc:"parentManageMode is 200 or not have parent"});
+	      		callback({status:200, responseData:"parentManageMode is 200 or not have parent"});
         },
 
         function (callback) {
@@ -318,54 +335,60 @@ var isFingerPrint = false;
           if(isFingerPrint){
           		console.log('--- async.waterfall checkMember #4-1, fingerprint ---');
 	          	peopleTree.getLocationForFp(groupMemberId, function(err, myData){
+
 		          	peopleTree.getLocationForFp(parentGroupMemberId, function(err, parentData){
-		          		//나와 부모의 fpId를 가져와 비교한다.
-		          		console.log("myData.fpId / parentData.fpId -> "+ myData.fpId + "/" + parentData.fpId);
+		          		if(err) callback(err,null);
+		          		
+		          		console.log("parentData.fpId : "+parentData.fpId + "/ parentData.latitude : "+parentData.latitude + "/ parentData.longitude : "+parentData.longitude);
+		          		if(parentData.fpId && parentData.latitude && parentData.longitude){
+			          		//나와 부모의 fpId를 가져와 비교한다.
+			          		console.log("myData.fpId / parentData.fpId -> "+ myData.fpId + "/" + parentData.fpId);
 
-		          		if(myData.fpId != parentData.fpId){
-		          			 //다르다면 바로 비유효 판정
-	          				 peopleTree.checkInvalidLocation(groupMemberId, parentGroupMemberId, manageMode, function(err,result){
-								  if(!err){
-									  console.log("/checkInvalidLocation : "+ result);
-									  if(result) callback(null,result);
-									  else callback({status:400, errorDesc:"Invalid Location process failed"},null);
-								  }
-								  else
-									  callback(err,null);
-							 });
-		          		}
-		          		else{
-		          			//fpID를 같다, 하지만 유효 거리에 있는지 판정.
-
-	          				var myFpFirstNum = parseInt(myData.latitude/100);
-	          				var parentFpFirstNum =  parseInt(parentData.latitude/100);
-
-	          				console.log("myFpFirstNum / parentFpFirstNum ->" + myFpFirstNum + " / " + parentFpFirstNum);
-
-		          			if (myFpFirstNum != parentFpFirstNum ){
-		          				//실내모드에서 같은 fpId를 같지만 거리가 멀리 떨어졌을때
-		          				peopleTree.checkInvalidLocation(groupMemberId, parentGroupMemberId, manageMode, function(err,result){
+			          		if(isLocationInvaild || myData.fpId != parentData.fpId){
+			          			 //다르다거나 정상코드가 아니면 바로 비유효 판정
+		          				 peopleTree.checkInvalidLocation(groupMemberId, parentGroupMemberId, manageMode, function(err,result){
 									  if(!err){
-										  console.log("/checkInvalidLocation : "+ result);
+										  console.log("/checkInvalidLocation : "+ JSON.stringify(result));
 										  if(result) callback(null,result);
 										  else callback({status:400, errorDesc:"Invalid Location process failed"},null);
 									  }
 									  else
 										  callback(err,null);
 								 });
-		          			}
-		          			else{
-		          				//같은 fpId를 갖으며, 거리 내에도 있다. 즉 정상.
-		          				peopleTree.setNormal(groupMemberId, parentGroupMemberId, function(err,result){
-		          					if(!err)
-		          						callback(null, {parentManageMode: manageMode, radius: -1, distance: -1, edgeStatus: 200, validation : true, accumulateWarning : 0});
-		          					else
-		          						callback(err,null);
-								 });
-		          			}
-		          		}
-		          	});
+			          		}
+			          		else{
+			          			//fpID를 같다, 하지만 유효 거리에 있는지 판정.
+		          				var myFpFirstNum = parseInt(myData.latitude/100);
+		          				var parentFpFirstNum =  parseInt(parentData.latitude/100);
 
+		          				console.log("myFpFirstNum / parentFpFirstNum ->" + myFpFirstNum + " / " + parentFpFirstNum);
+
+			          			if (myFpFirstNum != parentFpFirstNum ){
+			          				//실내모드에서 같은 fpId를 같지만 거리가 멀리 떨어졌을때
+			          				peopleTree.checkInvalidLocation(groupMemberId, parentGroupMemberId, manageMode, function(err,result){
+										  if(!err){
+											  console.log("/checkInvalidLocation : "+ result);
+											  if(result) callback(null,result);
+											  else callback({status:400, errorDesc:"Invalid Location process failed"},null);
+										  }
+										  else
+											  callback(err,null);
+									 });
+			          			}
+			          			else{
+			          				//같은 fpId를 갖으며, 거리 내에도 있다. 즉 정상.
+			          				peopleTree.setNormal(groupMemberId, parentGroupMemberId, function(err,result){
+			          					if(!err)
+			          						callback(null, result);
+			          					else
+			          						callback(err,null);
+									 });
+			          			}
+			          		}
+			          	}
+			          	else
+					  	  callback({status:300, errorDesc:"parent fp-setting is null"},null);
+			        });
 	          	});
 	      }
 	      else
@@ -413,13 +436,24 @@ var isFingerPrint = false;
 
       		if(!result.validation){
       			console.log('--- async.waterfall checkMember #5 ---');
+				//이탈 알림 자신, 부모에게 보내기.
+		        peopleTree.broadcastUp(groupMemberId, result.accumulateWarning, result, statusCode, function(err,result){
+		          if(err) console.log(err.message);
+		        });
+	      	}
+	      	else if(result.isToggle){
+	      		console.log("isToggle");
+      			//복귀 알림 부모에게 보내기.
 	      		peopleTree.push(groupMemberId, parentGroupMemberId, result, statusCode, function(err,result){
+		          if(err) console.log(err.message);
+		        });
+	      		//복귀 알림 자신에게 보내기.
+		        peopleTree.push(groupMemberId, groupMemberId, result, statusCode, function(err,result){
 		          if(err) console.log(err.message);
 		        });
 	      	}
 	      	callback(null,result);
         }
-
       ],
 
       function(err, results) {
@@ -498,7 +532,7 @@ router.get('/changeManageMode',function(req,res){
         }
       ],
       function(err) {
-        console.log('--- async.waterfall result checkMember #1 ---');
+        console.log('--- async.waterfall result changeManageMode #1 ---');
         if(!err)
           res.json({status:200, reponseData : manageMode+" manageMode change success"});
         else

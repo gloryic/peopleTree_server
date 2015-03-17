@@ -13,11 +13,12 @@ router.get('/up',function(req,res){
     var groupMemberId = req.query.groupMemberId;
     var accumulateWarning = req.query.accumulateWarning;
     var message = req.query.message;
-
+    var statusCode = 2048;
+    
     peopleTree.isExist(groupMemberId, function(err, isExist){
         if(!err){
             if(isExist){
-                peopleTree.broadcastUp(groupMemberId, accumulateWarning, message, function(err,result){
+                peopleTree.broadcastUp(groupMemberId, accumulateWarning, message, statusCode, function(err,result){
                     if(!err) res.json({status:200, responseData : {parents : result}});
                     else res.json({status:300, errorDesc : err});
                 });

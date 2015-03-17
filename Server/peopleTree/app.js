@@ -73,9 +73,10 @@ app.use(function(req, res, next) {
 });
 
 global.baseURL = '210.118.74.107:3000';
-//lobal.baseURL = '210.118.74.230:5033';
+//global.baseURL = '210.118.74.230:5033';
 //JUYOUNGKWANG-PC
 
+//host:'210.118.74.107',
 var dbConfig = {
   host:'210.118.74.107',
   port: 3306,
@@ -87,9 +88,30 @@ var dbConfig = {
 var APP_ID = 'sDGocHwgCiClL6qWbc2sOZzDbHtg6JCWWmhGZWIj';
 var MASTER_KEY = 'yyF56vK3wjZIyAEEZCzaYZ85COUdbaeHQwRQsFwM';
 global.parse = new Parse(APP_ID, MASTER_KEY);
+global.dbcon;
 
+function handleDisconnect() {
 
-global.dbcon = mysql.createConnection(dbConfig);
+  dbcon = mysql.createConnection(dbConfig);// Recreate the connection, since
+                                                  // the old one cannot be reused.                                         
+  dbcon.connect(function(err) {                   // The server is either down
+    if(err) {                                     // or restarting (takes a while sometimes).
+      console.log('error when connecting to db:', err);
+      setTimeout(handleDisconnect, 2000); // We introduce a delay before attempting to reconnect,
+    }                                     // to avoid a hot loop, and to allow our node script to
+  });                                     // process asynchronous requests in the meantime.
+                                          // If you're also serving http, display a 503 error.
+  dbcon.on('error', function(err) {
+    console.log('db error', err);
+    if(err.code === 'PROTOCOL_CONNECTION_LOST') { // Connection to the MySQL server is usually
+      handleDisconnect();                         // lost due to either server restart, or a
+    } else {                                      // connnection idle timeout (the wait_timeout
+      throw err;                                  // server variable configures this)
+    }
+  });
+}
+
+handleDisconnect();
 
 /// error handlers
 // development error handler
