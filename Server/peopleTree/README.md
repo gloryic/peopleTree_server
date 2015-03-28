@@ -136,7 +136,7 @@ http://210.118.74.107:3000/ptree/make/group?userPhoneNumber=01011113333&userId=j
 	"userPhoneNumber":1028791924,
 	"edgeStatus":200, // (100 - nothing), 200 - 정상, 300 - 비정상
 	"edgeType" : 100, // 100 - 정보 보고 관계, 200 - 위치 관리 관계 
-	"manageMode":200, // 200 - nothing 모드, 210 - 트레킹 모드, 220 - 지역모드, 230 - 지오펜스모드
+	"manageMode":200, // 200 - nothing 모드, 210 - 트레킹 모드, 220 - 지역모드, 230 - 지오펜스모드, 240 - 실내모드
   "managedLocationRadius":0,
   "latitude":"null",
   "longitude":"null",

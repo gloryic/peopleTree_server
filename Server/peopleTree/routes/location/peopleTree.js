@@ -16,7 +16,7 @@ PeopleTree.prototype.insertNode = function(userNumber, f) {
           console.log('--- async.waterfall insertNode #1 ---');
           request( {
             method: 'GET',
-            url: 'http://'+baseURL+'/ptree/_getinfo/group/member?userNumber='+userNumber,
+            url: 'http://'+baseURL+'/ptree/_getinfo/group/member?userNumber='+userNumber
           }, function(err, response) {
             if(!err){
               items = JSON.parse(response.body).responseData;
@@ -300,7 +300,6 @@ PeopleTree.prototype.affectAllParents = function(groupMemberId, totalNumber, num
   //부모의 관리 인원 정보를 업데이트. 내가 관리 하고 있는 인원 + 1(나)
   //groupMemberId의 부모로 시작해서 (accumulWarning-1) 위의 부모 만큼 푸시를 준다.
  
-
   var curParent = groupMemberId;
   var pastParent = -1;
   var valid = true;
@@ -408,6 +407,21 @@ PeopleTree.prototype.setManageNumber = function(groupMemberId, managingTotalNumb
 
     if(exist){
       tree.hmset("H/"+groupMemberId, items);
+      return f(null);
+    }
+    else
+      return f(err);
+  });
+}
+
+PeopleTree.prototype.updateManageNumber = function(groupMemberId, number, f) {
+
+  peopleTree.isExist(groupMemberId, function(err,exist){
+
+    if(exist){
+      tree.hincrby("H/"+groupMemberId, "managingNumber", number, function(err,obj){
+         if(err) console.log(err.message);
+      });
       return f(null);
     }
     else
@@ -742,10 +756,30 @@ PeopleTree.prototype.changeManageMode = function(groupMemberId, manageMode, f) {
   });
 }
 
+PeopleTree.prototype.getManageMode = function(groupMemberId, f) {
+  tree.hget('H/'+groupMemberId, 'manageMode', function(err, manageMode){
+    if(!err){
+        return f(null, parseInt(manageMode));
+    }
+    else
+      return f(err.message, null);
+  });
+}
+
 PeopleTree.prototype.changeEdgeType = function(groupMemberId, edgeType, f) {
   tree.hset('H/'+groupMemberId, 'edgeType', edgeType, function(err, updateNumber){
     if(!err){
       return f(null, true);
+    }
+    else
+      return f(err.message, null);
+  });
+}
+
+PeopleTree.prototype.getEdgeType = function(groupMemberId, f) {
+  tree.hget('H/'+groupMemberId, 'edgeType', function(err, edgeType){
+    if(!err){
+      return f(null, parseInt(edgeType));
     }
     else
       return f(err.message, null);
@@ -760,6 +794,27 @@ PeopleTree.prototype.changeEdgeStatus = function(groupMemberId, edgeStatus, f) {
     else
       return f(err.message, null);
   });
+}
+
+PeopleTree.prototype.accumulateWarningReset = function(groupMemberId, f) {
+
+  tree.hget('H/'+groupMemberId, 'accumulateWarning', function(err, accumulateWarning){
+    if(!err){
+      if(accumulateWarning != 0){
+        tree.hset('H/'+groupMemberId, 'accumulateWarning', 0, function(err, updateNumber){
+          if(!err)
+            return f(null, 1);
+          else
+            return f(err.message, null);
+        });
+      }
+      else
+        return f(null, 0);
+    }
+    else
+      return f(err.message, null);
+  });
+
 }
 
 PeopleTree.prototype.accumulateWarning = function(groupMemberId, resetFlag, f) {
@@ -1271,13 +1326,12 @@ PeopleTree.prototype.checkTrackingModeAndAreaMode = function(groupMemberId, pare
   });
 }
 
-PeopleTree.prototype.setNormal = function(groupMemberId, parentGroupMemberId, f) {
+PeopleTree.prototype.setNormal = function(groupMemberId, f) {
   console.log("setNormal");
-  var validation = true;
   var isToggle = false;
   async.waterfall([
       function(callback){
-        console.log('--- async.waterfall setNormal Node #4 ---');
+        console.log('--- async.waterfall setNormal Node #1 ---');
         tree.hget("H/"+groupMemberId,'edgeStatus',function(err,edgeStatus){
           console.log("edgeStatus : "+edgeStatus);//값 하나만 가져온다. 키 없이 값만
           if(!err)
@@ -1288,7 +1342,7 @@ PeopleTree.prototype.setNormal = function(groupMemberId, parentGroupMemberId, f)
       },
 
       function(edgeStatus, callback){
-        console.log('--- async.waterfall setNormal Node #5 ---');
+        console.log('--- async.waterfall setNormal Node #2 ---');
           peopleTree.changeEdgeStatus(groupMemberId, 200, function(err, updateNumber){
             if(!err)
               callback(null, edgeStatus);
@@ -1298,19 +1352,12 @@ PeopleTree.prototype.setNormal = function(groupMemberId, parentGroupMemberId, f)
       },
 
       function(edgeStatus, callback){
-        console.log('--- async.waterfall setNormal Node #6 ---');
-        if(!validation&&edgeStatus!=300){
-          peopleTree.affectAllParentsAboutManagingNumber(groupMemberId, -1, function(err,result){
-            if(!err) callback(null);
-            else callback({status:400, errorDesc: err}, null);
-          });
-        }
-        else if(validation&&edgeStatus!=200){
+        console.log('--- async.waterfall setNormal Node #3 ---');
+        if(edgeStatus!=200){
           peopleTree.affectAllParentsAboutManagingNumber(groupMemberId, 1, function(err,result){
             if(!err) callback(null);
             else callback({status:400, errorDesc: err}, null);
           });
-          //TODO
           isToggle = true;
         }
         else
@@ -1318,7 +1365,7 @@ PeopleTree.prototype.setNormal = function(groupMemberId, parentGroupMemberId, f)
       },
 
       function(callback){
-        console.log('--- async.waterfall setNormal Node #7 ---');
+        console.log('--- async.waterfall setNormal Node #4 ---');
 
           peopleTree.accumulateWarning(groupMemberId, true, function(err,accumulateWarning){
             if(!err)
@@ -1755,6 +1802,7 @@ PeopleTree.prototype.showTreeV2 = function(groupMemberId, f) {
                                 parent : parseInt(groupMemberId),
                                 manageMode : obj.manageMode,
                                 accumulateWarning : obj.accumulateWarning,
+                                edgeType: obj.edgeType,
                                 name: obj.userName,
                                 managingNumber : parseInt(obj.managingNumber),
                                 managingTotalNumber : parseInt(obj.managingTotalNumber),
@@ -1794,6 +1842,7 @@ PeopleTree.prototype.showTreeV2_sub = function(groupMemberId, f) {
                                     manageMode : parseInt(obj.manageMode),
                                     accumulateWarning : parseInt(obj.accumulateWarning),
                                     name: obj.userName,
+                                    edgeType: obj.edgeType,
                                     managingNumber : parseInt(obj.managingNumber),
                                     managingTotalNumber : parseInt(obj.managingTotalNumber),
                                     userNumber : parseInt(obj.userNumber)

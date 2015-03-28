@@ -20,6 +20,8 @@ viewTree = {
         });
     var bluegrad = $(go.Brush, go.Brush.Linear, { 0: "rgb(60, 204, 254)", 1: "rgb(70, 172, 254)" });
     var pinkgrad = $(go.Brush, go.Brush.Linear, { 0: "rgb(255, 192, 203)", 1: "rgb(255, 142, 203)" });
+    var orangegrad = $(go.Brush, go.Brush.Linear, { 0: "rgb(251, 208, 66)", 1: "rgb(230, 191, 60)" });
+
     // Set up a Part as a legend, and place it directly on the diagram
     myDiagram.add(
       $(go.Part, "Table",
@@ -40,7 +42,8 @@ viewTree = {
           $(go.TextBlock, "Out range",
             { font: "bold 8pt Helvetica, bold Arial, sans-serif" })
         )  // end row 2
-      ));
+    ));
+
     // get tooltip text from the object's data
     function tooltipTextConverter(person) {
       var str = "";
@@ -48,6 +51,7 @@ viewTree = {
       str += "\naccumulateWarning: " + person.accumulateWarning;
       return str;
     }
+    
     // define tooltips for nodes
     var tooltiptemplate =
       $(go.Adornment, "Auto",
@@ -60,10 +64,14 @@ viewTree = {
           new go.Binding("text", "", tooltipTextConverter))
       );
     // define Converters to be used for Bindings
-    function nodeBrushConverter(accumulateWarning) {
-      if (accumulateWarning == 0) return bluegrad;
-      if (accumulateWarning > 0) return pinkgrad;
-      return "orange";
+    function nodeBrushConverter(person) {
+      if (person.accumulateWarning == 0){
+        if(person.managingNumber != person.managingTotalNumber)
+          return orangegrad;
+        else
+          return bluegrad;
+      }
+      else if (person.accumulateWarning > 0) return pinkgrad;
     }
     // replace the default Node template in the nodeTemplateMap
     myDiagram.nodeTemplate =
@@ -75,7 +83,7 @@ viewTree = {
             stroke: "black",
             stretch: go.GraphObject.Fill,
             alignment: go.Spot.Center },
-          new go.Binding("fill", "accumulateWarning", nodeBrushConverter)),
+          new go.Binding("fill", "", nodeBrushConverter)),
         $(go.TextBlock,
           { font: "bold 8pt Helvetica, bold Arial, sans-serif",
             alignment: go.Spot.Center,
@@ -89,6 +97,7 @@ viewTree = {
       str += person.name;
       str += " ("+person.managingNumber+"/"+person.managingTotalNumber+")";
       str += "\nmanageMode: " + person.manageMode;
+      str += "\nedgeType: " + person.edgeType;
       str += "\naccumulateWarning: " + person.accumulateWarning;
       return str;
     }

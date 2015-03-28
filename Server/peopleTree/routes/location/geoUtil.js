@@ -1,5 +1,6 @@
 var express = require('express');
 var async = require('async');
+var request = require('request');
 var router = express.Router();
 
 /*
@@ -14,25 +15,20 @@ router.get('/setGeoPoint', function(req, res) {
 	var groupMemberId = req.query.groupMemberId;
 	var radius = req.query.radius;
 	var points = JSON.parse(req.query.points);// [{"lat":7,"lng":4}];
-	var manageMode = 0;
+	var manageMode = req.query.manageMode;
+	var edgeType;
+	var rsetNumber = 0;
+
+	if(manageMode > 200)
+		edgeType = 200;
+	else 
+		edgeType = 100;
 
 	if(radius=="")
 		radius = 0;
 
 	console.log("points : "+JSON.stringify(points));
 	console.log("points.length : "+points.length);
-
-	if(points.length == 0){
-	    if(radius == 0)
-			manageMode = 200;
-		else
-			manageMode = 210;
-	}
-	else if(points.length == 1)
-		manageMode = 220;
-	else
-		manageMode = 230;
-
 	console.log("manageMode : "+manageMode);
 
 	async.waterfall([
@@ -58,31 +54,69 @@ router.get('/setGeoPoint', function(req, res) {
 			});
         },
         function (callback) {
-          console.log('--- async.waterfall setGeoPoint #2 ---');
+          console.log('--- async.waterfall setGeoPoint #3 ---');
+			peopleTree.changeEdgeType(groupMemberId, edgeType, function(err,result){
+				if(!err){
+					if(result) callback(null);
+					else callback("change fail");
+				}
+				else callback(err,null);
+			});
+        },
+        function (callback) {
+          console.log('--- async.waterfall setGeoPoint #4 ---');
           	peopleTree.getChildren(groupMemberId, function(err, children, length){
 				if(!err){
 				  children.forEach(function (childGroupMemberId) {
-				        peopleTree.push(groupMemberId, childGroupMemberId, "부모의 관리모드가 변경되었습니다.", manageMode, function(err,result){
+					    //부모의 모드가 210, 220, 230 이면 자식의 edgeType을 200으로 변경한다. 
+						//아니라면 100으로 변경한다.
+						peopleTree.push(groupMemberId, childGroupMemberId, "부모의 관리모드가 변경되었습니다.", manageMode, function(err,result){
 				          if(err) console.log(err.message);
 				        });
+
+						if(edgeType==100){
+							console.log("setNormal children " +childGroupMemberId);
+							peopleTree.setNormal(childGroupMemberId, function(err,result){
+								if(err) console.log(err.message);
+							});
+						}
+						else{
+							peopleTree.getEdgeType(childGroupMemberId, function(err,childEdgeType){
+								if(err) console.log(err.message);
+								if(childEdgeType==100){
+									///childGroupMemberId로 setGeoPoint 호출한다. 
+							        request( {
+							          method: 'GET',
+							          url: 'http://127.0.0.1:3000/ptree/geoutil/setGeoPoint?'
+							          		+'groupMemberId='+childGroupMemberId
+							          		+'&radius='+radius
+							          		+'&points='+JSON.stringify(points)
+							          		+'&manageMode='+manageMode
+							        }, function(err, response) {
+							          if(err) console.log(err.message);
+							        });
+
+								}
+							});
+						}
 			      });
 			      callback(null);
 				}
 				else callback(err,null);
 			});
         },
-        function (callback) {
-        	console.log('--- async.waterfall setGeoPoint #3 ---');
 
-				peopleTree.setGeoPoint(groupMemberId, radius, points, function(err,obj){
-					if(!err){
-						console.log("/setGeoPoint : "+ JSON.stringify(obj));
-						callback(null)//res.json({status:200, responseData : "points's length * 2 + 1 = "+ obj });
-					}
-					else{
-						callback(err.message,null);//res.json({status:300, errorDesc : err.message });
-					}
-				});
+        function (callback) {
+        	console.log('--- async.waterfall setGeoPoint #5 ---');
+			peopleTree.setGeoPoint(groupMemberId, radius, points, function(err,obj){
+				if(!err){
+					console.log("/setGeoPoint : "+ JSON.stringify(obj));
+					callback(null)//res.json({status:200, responseData : "points's length * 2 + 1 = "+ obj });
+				}
+				else{
+					callback(err.message,null);//res.json({status:300, errorDesc : err.message });
+				}
+			});
         }
 
       ],
@@ -113,22 +147,14 @@ router.get('/getGeoPoint', function(req, res) {
 
 	peopleTree.getGeoPoint(groupMemberId, function(err,obj){
 		if(!err){
-
-			//radius만 있을때
-			if(obj.length == 1){
-			    if(obj[0] == 0)
-					manageMode = 200;
+			peopleTree.getManageMode(groupMemberId, function(err,manageMode){
+				if(!err){
+					console.log("/getGeoPoint : "+ JSON.stringify(obj));
+					res.json({status:200, responseData : {manageMode : manageMode, data : obj} });
+				}
 				else
-					manageMode = 210;
-			}
-			else if(obj.length == 3)//radius와 점 하나 이상이 있을때
-				manageMode = 220;
-			else
-				manageMode = 230;
-
-
-			console.log("/getGeoPoint : "+ JSON.stringify(obj));
-			res.json({status:200, responseData : {manageMode : manageMode, data : obj} });
+					res.json({status:300, errorDesc : err.message });
+			});
 		}
 		else{
 			res.json({status:300, errorDesc : err.message });
@@ -247,6 +273,7 @@ var message = '';
 var isCheckLocation = true;
 var isLocationInvaild = false;
 var isFingerPrint = false;
+var isParentManageModeIndoor = false;
 
 	async.waterfall([
 		
@@ -255,12 +282,15 @@ var isFingerPrint = false;
           //기기의 statusCode에 따라 프로세스가 진행되고 부모에게 알림이 간다.
           //나의 부모의 관리모드가 200인것과 나의 엣지타입이 100인 것은 위치 검사를 안한다는 것이다.
 
-          //TODO
           if(fpId == null)
           	fpId = 1;
           else if(fpId >= 2)
           	isFingerPrint = true;
-          
+
+          //내가 실외이고 부모의 관리모드가 실내일때 이탈자 처리한다.
+          if(!isFingerPrint && manageMode==240)
+          	isParentManageModeIndoor = true;
+
           if(edgeType==100 || manageMode==200)
           	isCheckLocation = false;
 
@@ -338,14 +368,14 @@ var isFingerPrint = false;
 
 		          	peopleTree.getLocationForFp(parentGroupMemberId, function(err, parentData){
 		          		if(err) callback(err,null);
-		          		
+
 		          		console.log("parentData.fpId : "+parentData.fpId + "/ parentData.latitude : "+parentData.latitude + "/ parentData.longitude : "+parentData.longitude);
 		          		if(parentData.fpId && parentData.latitude && parentData.longitude){
 			          		//나와 부모의 fpId를 가져와 비교한다.
 			          		console.log("myData.fpId / parentData.fpId -> "+ myData.fpId + "/" + parentData.fpId);
 
-			          		if(isLocationInvaild || myData.fpId != parentData.fpId){
-			          			 //다르다거나 정상코드가 아니면 바로 비유효 판정
+			          		if(myData.fpId != parentData.fpId){
+			          			 //다르다면 바로 비유효 판정
 		          				 peopleTree.checkInvalidLocation(groupMemberId, parentGroupMemberId, manageMode, function(err,result){
 									  if(!err){
 										  console.log("/checkInvalidLocation : "+ JSON.stringify(result));
@@ -377,7 +407,7 @@ var isFingerPrint = false;
 			          			}
 			          			else{
 			          				//같은 fpId를 갖으며, 거리 내에도 있다. 즉 정상.
-			          				peopleTree.setNormal(groupMemberId, parentGroupMemberId, function(err,result){
+			          				peopleTree.setNormal(groupMemberId, function(err,result){
 			          					if(!err)
 			          						callback(null, result);
 			          					else
@@ -398,7 +428,7 @@ var isFingerPrint = false;
         function (result, callback) {
         	//핑거프린트가 아닌 gps를 통한 유효성 체크
         	if(!isFingerPrint) {
-	          if(!isLocationInvaild) {
+	          if(!isLocationInvaild && !isParentManageModeIndoor) {
 	          	console.log('--- async.waterfall checkMember #4-2 ---');
 	          	peopleTree.checkLocation(groupMemberId, parentGroupMemberId, manageMode, function(err,result){
 					if(!err){
@@ -429,9 +459,9 @@ var isFingerPrint = false;
         function (result, callback) {
           
           	//관리대상의 엣지타입이 위치관리 관계일때 검사를 하고 이탈자일때 푸시를 보낸다.
-	        //{manageMode: 210, "radius":4,"distance":220732.02658609525,"edgeStatus":300,"validation":false,"accumulateWarning":1}}
-	        //{manageMode: 220, "radius":4,"distance":220732.02658609525,"edgeStatus":300,"validation":false,"accumulateWarning":1}}
-	        //{manageMode: 230, "edgeStatus":300,"validation":false,"accumulateWarning":1}}
+	        //{manageMode: 210, "radius":4,"distance":220732.02658609525,"edgeStatus":300,"validation":false,"accumulateWarning":1, "isToggle":false}}
+	        //{manageMode: 220, "radius":4,"distance":220732.02658609525,"edgeStatus":300,"validation":false,"accumulateWarning":1, "isToggle":false}}
+	        //{manageMode: 230, "edgeStatus":300,"validation":false,"accumulateWarning":1, "isToggle":false}}
 	        // reponseData.validation 이 false 이면 reponseData를 푸시알림으로 부모에게 보낸다.
 
       		if(!result.validation){
