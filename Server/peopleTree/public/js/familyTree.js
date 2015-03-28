@@ -32,14 +32,21 @@ viewTree = {
           { row: 1, alignment: go.Spot.Left },
           $(go.Shape, "Rectangle",
             { desiredSize: new go.Size(30, 30), fill: bluegrad, margin: 5 }),
-          $(go.TextBlock, "In range",
+          $(go.TextBlock, "정상 범위",
             { font: "bold 8pt Helvetica, bold Arial, sans-serif" })
         ),  // end row 1
         $(go.Panel, "Horizontal",
           { row: 2, alignment: go.Spot.Left },
           $(go.Shape, "Rectangle",
             { desiredSize: new go.Size(30, 30), fill: pinkgrad, margin: 5 }),
-          $(go.TextBlock, "Out range",
+          $(go.TextBlock, "범위 이탈",
+            { font: "bold 8pt Helvetica, bold Arial, sans-serif" })
+        ),  // end row 2
+        $(go.Panel, "Horizontal",
+          { row: 3, alignment: go.Spot.Left },
+          $(go.Shape, "Rectangle",
+            { desiredSize: new go.Size(30, 30), fill: orangegrad, margin: 5 }),
+          $(go.TextBlock, "이탈자 포함",
             { font: "bold 8pt Helvetica, bold Arial, sans-serif" })
         )  // end row 2
     ));

@@ -273,7 +273,7 @@ var message = '';
 var isCheckLocation = true;
 var isLocationInvaild = false;
 var isFingerPrint = false;
-var isParentManageModeIndoor = false;
+var isIndoorOutdoor = false;
 
 	async.waterfall([
 		
@@ -287,9 +287,16 @@ var isParentManageModeIndoor = false;
           else if(fpId >= 2)
           	isFingerPrint = true;
 
-          //내가 실외이고 부모의 관리모드가 실내일때 이탈자 처리한다.
-          if(!isFingerPrint && manageMode==240)
-          	isParentManageModeIndoor = true;
+          if(!isFingerPrint && manageMode==240){
+          	//내가 실외이고 부모의 관리모드가 실내일때 이탈자 처리한다.
+          	console.log("set isIndoorOutdoor1 true");
+          	isIndoorOutdoor = true;
+          }
+          else if(isFingerPrint && manageMode!=240 && manageMode!=200){
+          	//내가 실내고 부모의 관리모드가 실외일때 이탈자 처리한다.
+          	console.log("set isIndoorOutdoor2 true");
+          	isIndoorOutdoor = true;
+          }
 
           if(edgeType==100 || manageMode==200)
           	isCheckLocation = false;
@@ -298,12 +305,12 @@ var isParentManageModeIndoor = false;
           	//noting
           }
           else{
-          	if(parseInt(statusCode&2049) == 2049){
+          	if(!isFingerPrint && parseInt(statusCode&2049) == 2049){
           		console.log(statusCode&2049);
           		message += '(gps 오차 큼)';
           		isLocationInvaild = true;
           	}
-          	if(parseInt(statusCode&2050) == 2050){
+          	if(!isFingerPrint && parseInt(statusCode&2050) == 2050){
           		console.log(statusCode&2050);
           		message += '(gps 꺼짐)';
           		isLocationInvaild = true;
@@ -364,62 +371,77 @@ var isParentManageModeIndoor = false;
           //핑거프린터를 사용할때
           if(isFingerPrint){
           		console.log('--- async.waterfall checkMember #4-1, fingerprint ---');
-	          	peopleTree.getLocationForFp(groupMemberId, function(err, myData){
 
-		          	peopleTree.getLocationForFp(parentGroupMemberId, function(err, parentData){
-		          		if(err) callback(err,null);
+          		if(!isIndoorOutdoor){
 
-		          		console.log("parentData.fpId : "+parentData.fpId + "/ parentData.latitude : "+parentData.latitude + "/ parentData.longitude : "+parentData.longitude);
-		          		if(parentData.fpId && parentData.latitude && parentData.longitude){
-			          		//나와 부모의 fpId를 가져와 비교한다.
-			          		console.log("myData.fpId / parentData.fpId -> "+ myData.fpId + "/" + parentData.fpId);
+		          	peopleTree.getLocationForFp(groupMemberId, function(err, myData){
 
-			          		if(myData.fpId != parentData.fpId){
-			          			 //다르다면 바로 비유효 판정
-		          				 peopleTree.checkInvalidLocation(groupMemberId, parentGroupMemberId, manageMode, function(err,result){
-									  if(!err){
-										  console.log("/checkInvalidLocation : "+ JSON.stringify(result));
-										  if(result) callback(null,result);
-										  else callback({status:400, errorDesc:"Invalid Location process failed"},null);
-									  }
-									  else
-										  callback(err,null);
-								 });
-			          		}
-			          		else{
-			          			//fpID를 같다, 하지만 유효 거리에 있는지 판정.
-		          				var myFpFirstNum = parseInt(myData.latitude/100);
-		          				var parentFpFirstNum =  parseInt(parentData.latitude/100);
+			          	peopleTree.getLocationForFp(parentGroupMemberId, function(err, parentData){
+			          		if(err) callback(err,null);
 
-		          				console.log("myFpFirstNum / parentFpFirstNum ->" + myFpFirstNum + " / " + parentFpFirstNum);
+			          		console.log("parentData.fpId : "+parentData.fpId + "/ parentData.latitude : "+parentData.latitude + "/ parentData.longitude : "+parentData.longitude);
+			          		if(parentData.fpId && parentData.latitude && parentData.longitude){
+				          		//나와 부모의 fpId를 가져와 비교한다.
+				          		console.log("myData.fpId / parentData.fpId -> "+ myData.fpId + "/" + parentData.fpId);
 
-			          			if (myFpFirstNum != parentFpFirstNum ){
-			          				//실내모드에서 같은 fpId를 같지만 거리가 멀리 떨어졌을때
-			          				peopleTree.checkInvalidLocation(groupMemberId, parentGroupMemberId, manageMode, function(err,result){
+				          		if(myData.fpId != parentData.fpId){
+				          			 //다르다면 바로 비유효 판정
+			          				 peopleTree.checkInvalidLocation(groupMemberId, parentGroupMemberId, manageMode, function(err,result){
 										  if(!err){
-											  console.log("/checkInvalidLocation : "+ result);
+											  console.log("/checkInvalidLocation : "+ JSON.stringify(result));
 											  if(result) callback(null,result);
 											  else callback({status:400, errorDesc:"Invalid Location process failed"},null);
 										  }
 										  else
 											  callback(err,null);
 									 });
-			          			}
-			          			else{
-			          				//같은 fpId를 갖으며, 거리 내에도 있다. 즉 정상.
-			          				peopleTree.setNormal(groupMemberId, function(err,result){
-			          					if(!err)
-			          						callback(null, result);
-			          					else
-			          						callback(err,null);
-									 });
-			          			}
-			          		}
-			          	}
-			          	else
-					  	  callback({status:300, errorDesc:"parent fp-setting is null"},null);
-			        });
-	          	});
+				          		}
+				          		else{
+				          			//fpID를 같다, 하지만 유효 거리에 있는지 판정.
+			          				var myFpFirstNum = parseInt(myData.latitude/100);
+			          				var parentFpFirstNum =  parseInt(parentData.latitude/100);
+
+			          				console.log("myFpFirstNum / parentFpFirstNum ->" + myFpFirstNum + " / " + parentFpFirstNum);
+
+				          			if (myFpFirstNum != parentFpFirstNum ){
+				          				//실내모드에서 같은 fpId를 같지만 거리가 멀리 떨어졌을때
+				          				peopleTree.checkInvalidLocation(groupMemberId, parentGroupMemberId, manageMode, function(err,result){
+											  if(!err){
+												  console.log("/checkInvalidLocation : "+ result);
+												  if(result) callback(null,result);
+												  else callback({status:400, errorDesc:"Invalid Location process failed"},null);
+											  }
+											  else
+												  callback(err,null);
+										 });
+				          			}
+				          			else{
+				          				//같은 fpId를 갖으며, 거리 내에도 있다. 즉 정상.
+				          				peopleTree.setNormal(groupMemberId, function(err,result){
+				          					if(!err)
+				          						callback(null, result);
+				          					else
+				          						callback(err,null);
+										 });
+				          			}
+				          		}
+				          	}
+				          	else
+						  	  callback({status:300, errorDesc:"parent fp-setting is null"},null);
+				        });
+		          	});
+				}
+				else{
+      				 peopleTree.checkInvalidLocation(groupMemberId, parentGroupMemberId, manageMode, function(err,result){
+						  if(!err){
+							  console.log("/checkInvalidLocation : "+ JSON.stringify(result));
+							  if(result) callback(null,result);
+							  else callback({status:400, errorDesc:"Invalid Location process failed"},null);
+						  }
+						  else
+							  callback(err,null);
+					 });
+				}
 	      }
 	      else
 	      	callback(null, null);
@@ -428,7 +450,7 @@ var isParentManageModeIndoor = false;
         function (result, callback) {
         	//핑거프린트가 아닌 gps를 통한 유효성 체크
         	if(!isFingerPrint) {
-	          if(!isLocationInvaild && !isParentManageModeIndoor) {
+	          if(!isLocationInvaild && !isIndoorOutdoor) {
 	          	console.log('--- async.waterfall checkMember #4-2 ---');
 	          	peopleTree.checkLocation(groupMemberId, parentGroupMemberId, manageMode, function(err,result){
 					if(!err){
