@@ -38,7 +38,7 @@ app.disable('etag');//not 304
 
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
-app.set('port', process.env.PORT || 3000);
+app.set('port', process.env.PORT || 5050);
 
 app.use(favicon());
 app.use(logger('dev'));
@@ -72,13 +72,13 @@ app.use(function(req, res, next) {
     next(err);
 });
 
-global.baseURL = '210.118.74.107:3000';
+global.baseURL = '210.118.74.107:5050';
+global._PORT = 5050;
 //global.baseURL = '210.118.74.230:5033';
 //JUYOUNGKWANG-PC
 
-//host:'210.118.74.107',
 var dbConfig = {
-  host:'210.118.74.107',
+  host:'localhost',
   port: 3306,
   user: 'root',
   password:'1234',

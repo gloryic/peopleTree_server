@@ -16,7 +16,7 @@ PeopleTree.prototype.insertNode = function(userNumber, f) {
           console.log('--- async.waterfall insertNode #1 ---');
           request( {
             method: 'GET',
-            url: 'http://'+baseURL+'/ptree/_getinfo/group/member?userNumber='+userNumber
+            url: 'http://127.0.0.1:5050/ptree/_getinfo/group/member?userNumber='+userNumber
           }, function(err, response) {
             if(!err){
               items = JSON.parse(response.body).responseData;

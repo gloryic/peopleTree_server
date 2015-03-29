@@ -19,7 +19,7 @@ router.get('/setGeoPoint', function(req, res) {
 	var edgeType;
 	var rsetNumber = 0;
 
-	if(manageMode > 200)
+	if(manageMode == 210 || manageMode == 220 || manageMode == 230)
 		edgeType = 200;
 	else 
 		edgeType = 100;
@@ -87,7 +87,7 @@ router.get('/setGeoPoint', function(req, res) {
 									///childGroupMemberId로 setGeoPoint 호출한다. 
 							        request( {
 							          method: 'GET',
-							          url: 'http://127.0.0.1:3000/ptree/geoutil/setGeoPoint?'
+							          url: 'http://127.0.0.1:5050/ptree/geoutil/setGeoPoint?'
 							          		+'groupMemberId='+childGroupMemberId
 							          		+'&radius='+radius
 							          		+'&points='+JSON.stringify(points)

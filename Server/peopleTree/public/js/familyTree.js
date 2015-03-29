@@ -1,4 +1,4 @@
-var baseURL = '210.118.74.107:3000';
+var baseURL = '210.118.74.107:5050';
 var viewTree = {};
 var _userId = 0;
 var _polling;
