@@ -61,7 +61,22 @@ router.get('/', function(req, res) {
 		  },
 
 		  function(userNumber,callback) {
-		    console.log('--- async.waterfall logout #2 ---');
+		    console.log('--- async.waterfall logout #3 ---');
+          	peopleTree.getChildren(userNumber, function(err, children, length){
+				if(!err){
+				  children.forEach(function (childGroupMemberId) {
+			          tree.hset("H/"+childGroupMemberId, 'accumulateWarning', 0, function(err,obj){
+			            if(err) console.log(err.message);
+			          });
+			      });
+			      callback(null,userNumber);
+				}
+				else callback(err,null);
+			});
+		  },
+
+		  function(userNumber,callback) {
+		    console.log('--- async.waterfall logout #4 ---');
 			peopleTree.deleteNode(userNumber,function(err,deleteNumber){
 
 				if(deleteNumber==4)

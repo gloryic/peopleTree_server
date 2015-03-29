@@ -19,7 +19,7 @@ router.get('/setGeoPoint', function(req, res) {
 	var edgeType;
 	var rsetNumber = 0;
 
-	if(manageMode == 210 || manageMode == 220 || manageMode == 230)
+	if(manageMode == 210 || manageMode == 220 || manageMode == 230 || manageMode == 240)
 		edgeType = 200;
 	else 
 		edgeType = 100;
@@ -417,6 +417,7 @@ var isIndoorOutdoor = false;
 				          			}
 				          			else{
 				          				//같은 fpId를 갖으며, 거리 내에도 있다. 즉 정상.
+				          				console.log("setNormal");
 				          				peopleTree.setNormal(groupMemberId, function(err,result){
 				          					if(!err)
 				          						callback(null, result);

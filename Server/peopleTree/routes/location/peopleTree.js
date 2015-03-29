@@ -376,13 +376,18 @@ PeopleTree.prototype.affectAllParentsAboutManagingNumber = function(groupMemberI
           pushArray.push(parseInt(curParent));
 
           console.log("curParent : "+curParent);
-          tree.hget("H/"+curParent,'managingNumber',function(err,managingNumber){
-              managingNumber = parseInt(managingNumber);
-              if(managingNumber > -1 && managingNumber + number > -1){
-                tree.hincrby("H/"+curParent, "managingNumber", number, function(err,obj){
-                   if(err) console.log(err.message);
-                });
-              }
+
+          tree.hget("H/"+curParent,'managingTotalNumber',function(err,managingTotalNumber){
+            managingTotalNumber = parseInt(managingTotalNumber);
+
+            tree.hget("H/"+curParent,'managingNumber',function(err,managingNumber){
+                managingNumber = parseInt(managingNumber);
+                if(managingNumber > -1 && managingTotalNumber >= managingNumber + number && managingNumber + number > -1){
+                  tree.hincrby("H/"+curParent, "managingNumber", number, function(err,obj){
+                     if(err) console.log(err.message);
+                  });
+                }
+            });
           });
         }
         next();
@@ -1114,7 +1119,7 @@ PeopleTree.prototype.checkInvalidLocation = function(groupMemberId, parentGroupM
         console.log('--- async.waterfall checkInvalidLocation Node #3 ---');
         //부모의 관리 인원 중 나를 감소시킨다.
 
-        if(edgeStatus!=300){
+        if(edgeStatus==200){
           peopleTree.affectAllParentsAboutManagingNumber(groupMemberId, -1, function(err,result){
             if(!err) callback(null);
             else callback({status:400, errorDesc: err}, null);
@@ -1327,7 +1332,6 @@ PeopleTree.prototype.checkTrackingModeAndAreaMode = function(groupMemberId, pare
 }
 
 PeopleTree.prototype.setNormal = function(groupMemberId, f) {
-  console.log("setNormal");
   var isToggle = false;
   async.waterfall([
       function(callback){
@@ -1353,7 +1357,7 @@ PeopleTree.prototype.setNormal = function(groupMemberId, f) {
 
       function(edgeStatus, callback){
         console.log('--- async.waterfall setNormal Node #3 ---');
-        if(edgeStatus!=200){
+        if(edgeStatus==300){
           peopleTree.affectAllParentsAboutManagingNumber(groupMemberId, 1, function(err,result){
             if(!err) callback(null);
             else callback({status:400, errorDesc: err}, null);
