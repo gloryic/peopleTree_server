@@ -76,7 +76,7 @@ router.get('/setGeoPoint', function(req, res) {
 
 						if(edgeType==100){
 							console.log("setNormal children " +childGroupMemberId);
-							peopleTree.setNormal(childGroupMemberId, function(err,result){
+							peopleTree.setNormal(childGroupMemberId, manageMode, function(err,result){
 								if(err) console.log(err.message);
 							});
 						}
@@ -418,7 +418,7 @@ var isIndoorOutdoor = false;
 				          			else{
 				          				//같은 fpId를 갖으며, 거리 내에도 있다. 즉 정상.
 				          				console.log("setNormal");
-				          				peopleTree.setNormal(groupMemberId, function(err,result){
+				          				peopleTree.setNormal(groupMemberId, manageMode, function(err,result){
 				          					if(!err)
 				          						callback(null, result);
 				          					else

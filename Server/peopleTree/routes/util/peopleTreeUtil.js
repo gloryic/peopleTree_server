@@ -139,12 +139,15 @@ router.get('/getUserNameFromID',function(req,res){
 	var queryString = 'SELECT userNumber FROM idinfo WHERE userName=?';
 
 	var query = dbcon.query(queryString,userName,function(err,rows){
-		if(err){
-            	console.log(err);
-            	res.json({status:500, errorDesc : "RDBMS error"});
-        }
-        else
-        	res.json(rows[0].userNumber);
+		if(rows.length > 0){
+			if(err){
+	            	console.log(err);
+	            	res.json({status:500, errorDesc : "RDBMS error"});
+	        }
+	        else
+	        	res.json(rows[0].userNumber);
+	    }
+	    else res.json({status:500, errorDesc : "not login user"});
     });
 });
 

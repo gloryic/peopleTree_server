@@ -327,20 +327,22 @@ PeopleTree.prototype.affectAllParents = function(groupMemberId, totalNumber, num
               if(managingNumber > -1 && managingNumber + number > -1){
                 tree.hincrby("H/"+curParent, "managingNumber", number, function(err,obj){
                    if(err) console.log(err.message);
-                });
-              }
-          });
 
-          tree.hget("H/"+curParent,'managingTotalNumber',function(err,managingTotalNumber){
-              managingTotalNumber = parseInt(managingTotalNumber);
-              if(managingTotalNumber > -1 && managingTotalNumber + totalNumber > -1){
-                tree.hincrby("H/"+curParent, "managingTotalNumber", totalNumber, function(err,obj){
-                   if(err) console.log(err.message);
+                    tree.hget("H/"+curParent,'managingTotalNumber',function(err,managingTotalNumber){
+                        managingTotalNumber = parseInt(managingTotalNumber);
+                        if(managingTotalNumber > -1 && managingTotalNumber + totalNumber > -1){
+                          tree.hincrby("H/"+curParent, "managingTotalNumber", totalNumber, function(err,obj){
+                             if(err) console.log(err.message);
+                             next();
+                          });
+                        }
+                    });
+
                 });
               }
           });
         }
-        next();
+        else next();
       });
   },
   function (err) {
@@ -382,15 +384,16 @@ PeopleTree.prototype.affectAllParentsAboutManagingNumber = function(groupMemberI
 
             tree.hget("H/"+curParent,'managingNumber',function(err,managingNumber){
                 managingNumber = parseInt(managingNumber);
-                if(managingNumber > -1 && managingTotalNumber >= managingNumber + number && managingNumber + number > -1){
+                if(managingNumber > -1  && managingNumber + number > -1){//&& managingTotalNumber >= managingNumber + number
                   tree.hincrby("H/"+curParent, "managingNumber", number, function(err,obj){
                      if(err) console.log(err.message);
+                     next();
                   });
                 }
             });
           });
         }
-        next();
+        else next();
       });
   },
   function (err) {
@@ -1118,7 +1121,6 @@ PeopleTree.prototype.checkInvalidLocation = function(groupMemberId, parentGroupM
       function(edgeStatus, callback){
         console.log('--- async.waterfall checkInvalidLocation Node #3 ---');
         //부모의 관리 인원 중 나를 감소시킨다.
-
         if(edgeStatus==200){
           peopleTree.affectAllParentsAboutManagingNumber(groupMemberId, -1, function(err,result){
             if(!err) callback(null);
@@ -1331,7 +1333,7 @@ PeopleTree.prototype.checkTrackingModeAndAreaMode = function(groupMemberId, pare
   });
 }
 
-PeopleTree.prototype.setNormal = function(groupMemberId, f) {
+PeopleTree.prototype.setNormal = function(groupMemberId, manageMode, f) {
   var isToggle = false;
   async.waterfall([
       function(callback){
@@ -1373,7 +1375,7 @@ PeopleTree.prototype.setNormal = function(groupMemberId, f) {
 
           peopleTree.accumulateWarning(groupMemberId, true, function(err,accumulateWarning){
             if(!err)
-              callback(null, {parentManageMode : 210, radius : -1, distance : -1, edgeStatus : 200, validation : true, accumulateWarning : 0, isToggle : isToggle});
+              callback(null, {parentManageMode : manageMode, radius : -1, distance : -1, edgeStatus : 200, validation : true, accumulateWarning : 0, isToggle : isToggle});
             else
               callback({status:400, errorDesc: err}, null);
           });
