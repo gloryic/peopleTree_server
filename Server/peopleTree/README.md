@@ -22,7 +22,7 @@ status
 이 값을 가지고 다시 트리를 구성하지 않는다.
 
 #가입자 정보 가져오기는 userNumber 로 가져온다.
-http://210.118.74.107:3000/ptree/getinfo/group/member?userNumber=26
+/ptree/getinfo/group/member?userNumber=26
 
 #getinfo 응답 값 
 {
@@ -53,69 +53,69 @@ http://210.118.74.107:3000/ptree/getinfo/group/member?userNumber=26
 (수정 사항 모든 메소드에서 그룹 아이디를 받는 것을 제거, 그룹멤버 아이디가 유니크하기에 가능.)
 
 #해당 유저를 루트로한 트리를 보여준다.
-http://210.118.74.107:3000/ptree/test/showTree?rootGroupId=27
+/ptree/test/showTree?rootGroupId=27
 
 #유저번호로 디비에서 정보를 가져와 노드로 삽입한다.
-http://210.118.74.107:3000/ptree/test/insertNode?userNumber=blah
+/ptree/test/insertNode?userNumber=blah
 
 #그룹멤버 아이디로 redis의 해시 테이블에 저장된 정보를 가져온다.
-http://210.118.74.107:3000/ptree/test/getItems?groupMemberId=12
+/ptree/test/getItems?groupMemberId=12
 
 #위치정보를 업데이트한다.
-http://210.118.74.107:3000/ptree/test/setLocation?groupMemberId=26&latitude=126.946035&longitude=37.554339
+/ptree/test/setLocation?groupMemberId=26&latitude=126.946035&longitude=37.554339
 
 #위치정보를 가져온다.
-http://210.118.74.107:3000/ptree/test/getLocation?groupMemberId=27
+/ptree/test/getLocation?groupMemberId=27
 
 #노드를 삭제한다.
-http://210.118.74.107:3000/ptree/test/deleteNode?groupMemberId=27
+/ptree/test/deleteNode?groupMemberId=27
 
 #루트노드 인지 확인한다.
-http://210.118.74.107:3000/ptree/test/isRoot?groupMemberId=27
+/ptree/test/isRoot?groupMemberId=27
 
 #부모를 바꾼다.
-http://210.118.74.107:3000/ptree/test/changeParent?myGroupMemberId=1&parentGroupMemberId=1
+/ptree/test/changeParent?myGroupMemberId=1&parentGroupMemberId=1
 
 #부모가 정한 지역에 내가 있는지 확인한다. 210 - 트레킹 모드, 220 - 지역모드, 230, 지오펜싱 모드
-http://210.118.74.107:3000/ptree/test/checkLocation?groupMemberId=26&parentGroupMemberId=27&manageMode=220
+/ptree/test/checkLocation?groupMemberId=26&parentGroupMemberId=27&manageMode=220
 
 #븉으려고 하는 노드의 부모중에 내가 있으면 안된다. 이걸 체크
-http://210.118.74.107:3000/ptree/test/isValidChange?myGroupMemberId=27&parentGroupMemberId=26
+/ptree/test/isValidChange?myGroupMemberId=27&parentGroupMemberId=26
 
 #지오펜싱 모드 체크
-http://210.118.74.107:3000/ptree/test/checkGeofencingMode?groupMemberId=26&parentGroupMemberId=27
+/ptree/test/checkGeofencingMode?groupMemberId=26&parentGroupMemberId=27
 
 #관리자의 관리 지역설정 하기 
 #points의 길이가 1이면 220 - 지역 모드에서 쓰인다. n이면 지오펜싱 모드
-http://210.118.74.107:3000/ptree/test/setGeoPoint?groupMemberId=26&radius=10&points=[{lat:0,lng:0},{lat:0,lng:0},...]
+/ptree/test/setGeoPoint?groupMemberId=26&radius=10&points=[{lat:0,lng:0},{lat:0,lng:0},...]
 
 #push 받기 아이디 등록하기
-POST http://210.118.74.107:3000/ptree/test/registrationId?registrationId=123123&userNumber=123123
+POST /ptree/test/registrationId?registrationId=123123&userNumber=123123
 
 #자식의 수와 자식의 번호들을 리스트로 가져온다.
-http://210.118.74.107:3000/ptree/group/children?groupMemberId=26
+/ptree/group/children?groupMemberId=26
 
 #깊이에 있는 자식에게만 푸시를 보낸다.
-http://210.118.74.107:3000/ptree/test/broadcast/Down?groupMemberId=26&depth=1
+/ptree/test/broadcast/Down?groupMemberId=26&depth=1
 
 #위로 푸시알림을 보낸다 누적 경고의 횟수만큼 올라간다.(나포함)
-http://210.118.74.107:3000/ptree/test/broadcast/Up?groupMemberId=26&accumulateWarning=1
+/ptree/test/broadcast/Up?groupMemberId=26&accumulateWarning=1
 
 #################
 #URI test
 #################
 
 #가입자 정보 가져오기
-http://210.118.74.107:3000/ptree/getinfo/group/member?userNumber=26 //DataBase를 참조하며, 경도,위도, 관리인원은 redis를 참조한다.
+/ptree/getinfo/group/member?userNumber=26 //DataBase를 참조하며, 경도,위도, 관리인원은 redis를 참조한다.
 
 #회원가입 URL - idinfo, grouplist, groupmember에 레코드가 삽입되며, 서버 메모리에 노드로서 생성된다.
-http://210.118.74.107:3000/ptree/make/group?userPhoneNumber=01011112222&userId=jakimg&password=123&userName=abc&groupName=first111
+/ptree/make/group?userPhoneNumber=01011112222&userId=jakimg&password=123&userName=abc&groupName=first111
 #res
 #{"status":200,"responseData":{"userNumber":42,"desc":"make group success"}}
 #{"status":300,"errorDesc:"blahbah"}
 
 #로그인 하기
-http://210.118.74.107:3000/ptree/login?userId=jakimg123&password=123
+/ptree/login?userId=jakimg123&password=123
 
 ################
 #FLOW
@@ -123,7 +123,7 @@ http://210.118.74.107:3000/ptree/login?userId=jakimg123&password=123
 
 1. make/group을 통해서 회원가입을 한다.
 
-http://210.118.74.107:3000/ptree/make/group?userPhoneNumber=01011113333&userId=jakimg1&password=123&userName=grout&groupName=first222
+/ptree/make/group?userPhoneNumber=01011113333&userId=jakimg1&password=123&userName=grout&groupName=first222
 
 ## "H/그룹아이디"로 해쉬태이블 생성 회원 정보 관리
 {
@@ -134,7 +134,7 @@ http://210.118.74.107:3000/ptree/make/group?userPhoneNumber=01011113333&userId=j
 	"userName":"영광",
 	"groupId":1,
 	"userPhoneNumber":1028791924,
-	"edgeStatus":200, // (100 - nothing), 200 - 정상, 300 - 비정상
+	"edgeStatus":200, // 200 - 정상, 300 - 비정상
 	"edgeType" : 100, // 100 - 정보 보고 관계, 200 - 위치 관리 관계 
 	"manageMode":200, // 200 - nothing 모드, 210 - 트레킹 모드, 220 - 지역모드, 230 - 지오펜스모드, 240 - 실내모드
   "managedLocationRadius":0,
@@ -223,15 +223,8 @@ totalLen - 2 == 전체 자식들의 수
               "action":"com.ssm.peopleTree.message"
            }
 
-
-
-
 2. 로그인이 되면서 메모리에 노드가 생성된다.
-210.118.74.107:3000/ptree/login?userId=jakimg1&password=123
+/ptree/login?userId=jakimg1&password=123
 
 3. 부모 변경
-http://210.118.74.107:3000/ptree/test/changeParent?myGroupId=1&myGroupMemberId=1&parentGroupId=1&parentGroupMemberId=1
-
-4. 해당 회원을 루트로한 트리가 제이슨 트리 형식으로 반환된다.
-http://210.118.74.107:3000/ptree/test/showTree?rootGroupId=27
-(여기서 보면 됨 : http://www.jsontree.com/)
+/ptree/test/changeParent?myGroupId=1&myGroupMemberId=1&parentGroupId=1&parentGroupMemberId=1
